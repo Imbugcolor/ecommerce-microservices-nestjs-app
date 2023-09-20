@@ -1,8 +1,8 @@
 import { AbstractDocument, AddressDto } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Role } from '../enums/role.enum';
-import { LoginType } from '../enums/login-type.enum';
-import { UserGender } from '../enums/user-gender.enum';
+import { Role } from '../../../../apps/auth/src/users/enums/role.enum';
+import { LoginType } from '../../../../apps/auth/src/users/enums/login-type.enum';
+import { UserGender } from '../../../../apps/auth/src/users/enums/user-gender.enum';
 
 @Schema()
 export class User extends AbstractDocument {

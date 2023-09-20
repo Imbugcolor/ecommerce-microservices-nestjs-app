@@ -7,9 +7,9 @@ import {
 import { UserRepository } from './users.repository';
 import { RegisterDto } from '../dto/register.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './models/user.schema';
+import { User } from '@app/common';
 import { Model, Types } from 'mongoose';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -25,8 +25,8 @@ export class UsersService {
       throw new UnauthorizedException('cf_password does not match password.');
     }
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcryptjs.genSalt();
+    const hashedPassword = await bcryptjs.hash(password, salt);
 
     const newUser = { username, email, password: hashedPassword };
 

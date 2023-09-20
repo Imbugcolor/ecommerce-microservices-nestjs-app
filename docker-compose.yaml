@@ -18,7 +18,7 @@ services:
       target: development
     command: npm run start:dev auth
     env_file:
-      - .apps/auth/.env
+      - ./apps/auth/.env
     ports:
       - '3001:3001'
     volumes:

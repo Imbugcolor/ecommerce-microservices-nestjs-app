@@ -4,9 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from './users/users.repository';
-import { User } from './users/models/user.schema';
+import { User } from '@app/common';
 import { LoginType } from './users/enums/login-type.enum';
-import * as bcrypt from 'bcrypt';
+import * as bcryptjs from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { Response } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
@@ -37,7 +37,7 @@ export class AuthService {
       );
     }
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && (await bcryptjs.compare(password, user.password))) {
       const accessToken = await this.getAccessToken(user._id.toString());
       const refreshToken = await this.getRefreshToken(user._id.toString());
 
@@ -60,8 +60,8 @@ export class AuthService {
   }
 
   async hashData(data: string) {
-    const salt = await bcrypt.genSalt();
-    const hashedData = await bcrypt.hash(data, salt);
+    const salt = await bcryptjs.genSalt();
+    const hashedData = await bcryptjs.hash(data, salt);
     return hashedData;
   }
 
@@ -103,7 +103,7 @@ export class AuthService {
   async refreshTokens(userId: string, refreshToken: string) {
     const user = await this.userModel.findById(userId);
     if (!user || !user.rf_token) throw new ForbiddenException('Access Denied');
-    const refreshTokenMatches = await bcrypt.compare(
+    const refreshTokenMatches = await bcryptjs.compare(
       refreshToken,
       user.rf_token,
     );

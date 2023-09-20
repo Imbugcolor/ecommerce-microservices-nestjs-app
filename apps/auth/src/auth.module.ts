@@ -8,7 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
-import { User, UserSchema } from './users/models/user.schema';
+import { User, UserSchema } from '@app/common';
 
 @Module({
   imports: [
@@ -20,7 +20,8 @@ import { User, UserSchema } from './users/models/user.schema';
       isGlobal: true,
       validationSchema: Joi.object({
         MONGODB_URI: Joi.string().required(),
-        PORT: Joi.number().required(),
+        HTTP_PORT: Joi.number().required(),
+        TCP_PORT: Joi.number().required(),
         JWT_SECRET: Joi.string().required(),
         JWT_REFRESH_TOKEN_SECRET: Joi.string().required(),
       }),

@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { User } from './users/models/user.schema';
+import { User } from '@app/common';
 import { Request, Response } from 'express';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 import { AccessTokenGuard } from './guards/accessToken.guard';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
@@ -42,5 +43,11 @@ export class AuthController {
   ): Promise<any> {
     const userId = req.user['_id'];
     return this.authService.signOut(userId, res);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @MessagePattern('authenticate')
+  async authenticate(@Payload() data: any) {
+    return data.user;
   }
 }
