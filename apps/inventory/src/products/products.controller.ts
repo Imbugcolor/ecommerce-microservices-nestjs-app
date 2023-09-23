@@ -8,10 +8,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { Product } from './models/products.schema';
+import { Product } from '@app/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { GetUser, JwtAuthGuard, User } from '@app/common';
+import { JwtAuthGuard } from '@app/common';
 
 @Controller('products')
 export class ProductsController {

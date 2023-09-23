@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { VariantType } from '../../variant/types/variant.type';
 import { Type } from 'class-transformer';
-import { ProductImageType } from '../types/product-image.type';
+import { ProductImageType } from '../../../../../libs/common/src/types/product-image.type';
 
 export class CreateProductDto {
   @IsNotEmpty()

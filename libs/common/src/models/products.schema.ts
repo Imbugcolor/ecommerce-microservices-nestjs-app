@@ -1,10 +1,10 @@
 import { AbstractDocument } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
-import { Category } from '../../category/models/category.schema';
-import { Variant } from '../../variant/models/variant.schema';
+import { Category } from './category.schema';
+import { Variant } from './variant.schema';
 import { ProductImageType } from '../types/product-image.type';
-import { Review } from '../../review/models/review.schema';
+import { Review } from './review.schema';
 
 @Schema({ versionKey: false, timestamps: true })
 export class Product extends AbstractDocument {

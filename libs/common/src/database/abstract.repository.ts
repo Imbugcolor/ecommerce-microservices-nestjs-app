@@ -83,4 +83,21 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
   async findOneAndDelete(filterQuery: FilterQuery<TDocument>) {
     return this.model.findOneAndDelete(filterQuery, { lean: true });
   }
+
+  async findByIdAndDelete(id: string) {
+    const document = await this.model.findByIdAndDelete(id, { lean: true });
+
+    if (!document) {
+      this.logger.warn(`Document [${id}] not found.`);
+      throw new NotFoundException(
+        `[${this.model.collection.collectionName}]: Document [${id}] not found.`,
+      );
+    }
+
+    return document;
+  }
+
+  async deleteMany(filterQuery: FilterQuery<TDocument>) {
+    return this.model.deleteMany(filterQuery);
+  }
 }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { Product } from './models/products.schema';
+import { Product } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
@@ -19,6 +19,10 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     private variantService: VariantService,
   ) {}
+
+  async validate(id: string): Promise<Product> {
+    return this.productRepository.findById(id);
+  }
 
   async getProduct(id: string): Promise<Product> {
     const product = await this.productModel.findById(id).populate([

@@ -1,5 +1,5 @@
 import { AbstractRepository } from '@app/common';
-import { Variant } from './models/variant.schema';
+import { Variant } from '@app/common';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';

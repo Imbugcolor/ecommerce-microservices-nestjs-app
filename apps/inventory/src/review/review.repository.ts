@@ -1,5 +1,5 @@
 import { AbstractRepository } from '@app/common';
-import { Review } from './models/review.schema';
+import { Review } from '../../../../libs/common/src/models/review.schema';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';

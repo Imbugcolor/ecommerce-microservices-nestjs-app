@@ -3,11 +3,11 @@ import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { ProductRepository } from './products.repository';
 import { AUTH_SERVICE, DatabaseModule } from '@app/common';
-import { Product, ProductSchema } from './models/products.schema';
-import { Category, CategorySchema } from '../category/models/category.schema';
+import { Product, ProductSchema } from '@app/common';
+import { Category, CategorySchema } from '@app/common';
 import { CategoryModule } from '../category/category.module';
-import { Variant, VariantSchema } from '../variant/models/variant.schema';
-import { Review, ReviewSchema } from '../review/models/review.schema';
+import { Variant, VariantSchema } from '@app/common';
+import { Review, ReviewSchema } from '@app/common';
 import { VariantModule } from '../variant/variant.module';
 import { ReviewModule } from '../review/review.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -40,6 +40,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ]),
   ],
   providers: [ProductsService, ProductRepository],
-  controllers: [ProductsController],
+  controllers: [ProductsController, ProductsService, ProductRepository],
+  exports: [ProductsService, ProductRepository],
 })
 export class ProductsModule {}

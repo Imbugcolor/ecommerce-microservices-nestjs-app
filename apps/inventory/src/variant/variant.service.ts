@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Variant } from './models/variant.schema';
+import { Variant } from '@app/common';
 import { FilterQuery, Model } from 'mongoose';
 import { VariantRepository } from './variant.repository';
 import { VariantType } from './types/variant.type';
@@ -11,6 +11,10 @@ export class VariantService {
     private variantRepository: VariantRepository,
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
   ) {}
+
+  async validate(id: string): Promise<Variant> {
+    return this.variantRepository.findById(id);
+  }
 
   async createVariant(variant: VariantType): Promise<Variant> {
     const { size, color, inventory, productId } = variant;

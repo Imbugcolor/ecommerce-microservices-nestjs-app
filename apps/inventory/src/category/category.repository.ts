@@ -1,5 +1,5 @@
 import { AbstractRepository } from '@app/common';
-import { Category } from './models/category.schema';
+import { Category } from '../../../../libs/common/src/models/category.schema';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';

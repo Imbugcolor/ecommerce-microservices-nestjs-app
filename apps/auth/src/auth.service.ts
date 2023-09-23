@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './users/users.repository';
 import { User } from '@app/common';
-import { LoginType } from './users/enums/login-type.enum';
+import { LoginType } from '../../../libs/common/src/enums/login-type.enum';
 import * as bcryptjs from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { Response } from 'express';

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { VariantService } from './variant.service';
 import { VariantController } from './variant.controller';
 import { DatabaseModule } from '@app/common';
-import { Variant, VariantSchema } from './models/variant.schema';
+import { Variant, VariantSchema } from '@app/common';
 import { VariantRepository } from './variant.repository';
 
 @Module({

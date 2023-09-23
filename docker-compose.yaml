@@ -23,3 +23,15 @@ services:
       - '3001:3001'
     volumes:
       - .:/usr/src/app
+  cart:
+    build: 
+      context: .
+      dockerfile: ./apps/cart/Dockerfile
+      target: development
+    command: npm run start:dev cart
+    env_file:
+      - ./apps/cart/.env
+    ports:
+      - '3003:3003'
+    volumes:
+      - .:/usr/src/app

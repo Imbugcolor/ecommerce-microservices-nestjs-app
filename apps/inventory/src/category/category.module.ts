@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CategoryController } from './category.controller';
 import { DatabaseModule } from '@app/common';
-import { Category, CategorySchema } from './models/category.schema';
+import { Category, CategorySchema } from '../../../../libs/common/src/models/category.schema';
 import { CategoryRepository } from './category.repository';
 
 @Module({
