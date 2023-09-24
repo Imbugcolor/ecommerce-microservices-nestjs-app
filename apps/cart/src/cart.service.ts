@@ -12,8 +12,8 @@ import { Model } from 'mongoose';
 import { Types } from 'mongoose';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { AddCartDto } from './dto/add-cart.dto';
-import { ClientProxy } from '@nestjs/microservices';
-import { map } from 'rxjs';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { CartItemService } from './cart-item/cart-item.service';
 import { CartItem } from './cart-item/models/cart-item.schema';
 
@@ -53,7 +53,10 @@ export class CartService {
   }
 
   async createCart(createCartDto: CreateCartDto) {
-    const newCart = new this.cartModel(createCartDto);
+    const newCart = new this.cartModel({
+      ...createCartDto,
+      _id: new Types.ObjectId(),
+    });
 
     return newCart.save();
   }
@@ -64,14 +67,14 @@ export class CartService {
 
       if (!cart) {
         const cartData = {
-          user,
+          user: user._id,
           items: [],
           subTotal: 0,
         };
         return this.createCart(cartData);
       } else {
         await Promise.all(
-          cart.items.map(async (item) => {
+          cart.items.map(async (item: CartItem) => {
             if (!item.productId && user) {
               await this.cartModel
                 .findOneAndUpdate(
@@ -138,26 +141,29 @@ export class CartService {
     }
   }
 
+  async getProduct(id: string) {
+    try {
+      const res = await firstValueFrom(
+        this.inventoryService.send<Product>('product-validate', id),
+      );
+      return res;
+    } catch (error) {
+      console.log(error);
+      throw new RpcException(error.response);
+    }
+  }
+
   async addCart(addCartDto: AddCartDto, user: User): Promise<Cart> {
     const { productId, variantId, quantity } = addCartDto;
 
     const cart = await this.validate(user._id, null);
 
-    let product: Product;
+    const product = await this.getProduct(productId);
 
-    this.inventoryService.send('product-validate', productId).pipe(
-      map((res) => {
-        product = res;
-        return product;
-      }),
-    );
-
-    this.inventoryService.send('variant-validate', variantId);
-
-    if (
-      !product.variants.find((variant) => variant._id.toString() === variantId)
-    ) {
-      throw new NotFoundException('This product not includes this variant id.');
+    if (!product.variants.find((variant) => variant.toString() === variantId)) {
+      throw new NotFoundException(
+        `This product [${productId}] not includes this variant [${variantId}].`,
+      );
     }
 
     const newItem = {
@@ -235,7 +241,7 @@ export class CartService {
     else {
       const item = await this.cartItemService.createItem(newItem);
       const cartData = {
-        user: user,
+        user: user._id,
         items: [item],
         subTotal: Number(product.price * quantity),
       };

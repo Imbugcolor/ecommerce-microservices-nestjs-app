@@ -3,7 +3,7 @@ import { CartItem } from './models/cart-item.schema';
 import { CartItemRepository } from './cart-item.repository';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class CartItemService {
@@ -14,7 +14,10 @@ export class CartItemService {
 
   async createItem(createCartItemDto: CreateCartItemDto): Promise<CartItem> {
     // return this.cartItemRepository.create(createCartItemDto);
-    const item = new this.cartItemModel(createCartItemDto);
+    const item = new this.cartItemModel({
+      ...createCartItemDto,
+      _id: new Types.ObjectId(),
+    });
     return item.save();
   }
 

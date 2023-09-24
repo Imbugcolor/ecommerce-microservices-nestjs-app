@@ -40,7 +40,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ]),
   ],
   providers: [ProductsService, ProductRepository],
-  controllers: [ProductsController, ProductsService, ProductRepository],
+  controllers: [ProductsController],
   exports: [ProductsService, ProductRepository],
 })
 export class ProductsModule {}

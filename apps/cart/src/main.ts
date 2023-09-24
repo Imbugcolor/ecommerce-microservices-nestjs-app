@@ -3,6 +3,7 @@ import { CartModule } from './cart.module';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 import { Logger } from 'nestjs-pino';
+import { RpcExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(CartModule);
@@ -15,7 +16,8 @@ async function bootstrap() {
     },
   });
   app.useLogger(app.get(Logger));
-  app.startAllMicroservices();
+  app.useGlobalFilters(new RpcExceptionFilter());
+  await app.startAllMicroservices();
   await app.listen(configService.get('HTTP_PORT'));
 }
 bootstrap();

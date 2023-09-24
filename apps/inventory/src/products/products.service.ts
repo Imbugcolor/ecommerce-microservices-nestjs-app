@@ -11,6 +11,7 @@ import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService {
@@ -21,7 +22,13 @@ export class ProductsService {
   ) {}
 
   async validate(id: string): Promise<Product> {
-    return this.productRepository.findById(id);
+    const product = await this.productModel.findById(id);
+    if (!product) {
+      throw new RpcException(
+        new NotFoundException(`This product id: [${id}] is not found.`),
+      );
+    }
+    return product;
   }
 
   async getProduct(id: string): Promise<Product> {

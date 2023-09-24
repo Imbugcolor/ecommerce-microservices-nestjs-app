@@ -7,13 +7,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { CartItem } from '../cart-item/models/cart-item.schema';
-import { User } from '@app/common';
 import { Type } from 'class-transformer';
+import { Types } from 'mongoose';
 
 export class CreateCartDto {
   @IsString()
   @IsNotEmpty()
-  user: User;
+  user: Types.ObjectId;
 
   @IsArray()
   @ArrayNotEmpty()
