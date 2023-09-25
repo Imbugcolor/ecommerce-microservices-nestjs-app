@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CartItem } from './models/cart-item.schema';
 import { CartItemRepository } from './cart-item.repository';
-import { CreateCartItemDto } from './dto/create-cart-item.dto';
+import { CreateCartItemDto } from '../dto/create-cart-item.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 

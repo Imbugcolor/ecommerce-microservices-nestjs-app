@@ -16,6 +16,9 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CartItemService } from './cart-item/cart-item.service';
 import { CartItem } from './cart-item/models/cart-item.schema';
+import { UpdateCartDto } from './dto/update-cart.dto';
+import { UpdateCartAction } from './enums/update-cart-action.enum';
+import { DeleteCartItemDto } from './dto/delete-cart-item.dto';
 
 @Injectable()
 export class CartService {
@@ -257,7 +260,117 @@ export class CartService {
           select: '_id color size inventory productId',
         },
       ]);
-      // let data = await cart.save();
     }
+  }
+
+  async updateCart(
+    updateCartDto: UpdateCartDto,
+    updateAction: UpdateCartAction,
+  ): Promise<Cart> {
+    const { cartId, itemId } = updateCartDto;
+
+    const cart = await this.validate(null, cartId);
+
+    if (!cart) {
+      throw new NotFoundException(`This cart id: ${cartId} not exists.`);
+    }
+
+    const indexFound = cart.items.findIndex(
+      (item: CartItem) => item._id.toString() == itemId,
+    );
+
+    if (indexFound !== -1) {
+      if (
+        updateAction === UpdateCartAction.DECREMENT &&
+        cart.items[indexFound].quantity === 1
+      ) {
+        throw new InternalServerErrorException(
+          `Quantity must be greater than 1`,
+        );
+      }
+      const product = await this.getProduct(
+        cart.items[indexFound].productId._id.toString(),
+      );
+
+      let newItem: { quantity: number; total: number };
+
+      if (updateAction === UpdateCartAction.INCREMENT) {
+        newItem = {
+          quantity: cart.items[indexFound].quantity + 1,
+          total: (cart.items[indexFound].quantity + 1) * product.price,
+        };
+      }
+      if (updateAction === UpdateCartAction.DECREMENT) {
+        newItem = {
+          quantity: cart.items[indexFound].quantity - 1,
+          total: (cart.items[indexFound].quantity - 1) * product.price,
+        };
+      }
+
+      const item = await this.cartItemService.updateItem(
+        cart.items[indexFound]._id.toString(),
+        newItem,
+      );
+
+      cart.items[indexFound].quantity = item.quantity;
+      cart.items[indexFound].total = item.total;
+
+      cart.subTotal = cart.items
+        .map((item: CartItem) => item.total)
+        .reduce((acc: number, next: number) => acc + next);
+    }
+
+    return cart.save();
+  }
+
+  async deleteCartItem(deleteItemDto: DeleteCartItemDto): Promise<Cart> {
+    const { cartId, itemId } = deleteItemDto;
+
+    //validate
+    await this.cartRepository.findOne({
+      _id: cartId,
+      items: itemId,
+    });
+
+    await this.cartModel.findByIdAndUpdate(cartId, {
+      $pull: {
+        items: {
+          $in: [itemId],
+        },
+      },
+    });
+
+    await this.cartItemService.deleteItem(itemId);
+
+    const newCart = await this.validate(null, cartId);
+
+    if (!newCart) {
+      throw new NotFoundException(`This cart id: ${cartId} not exists.`);
+    }
+
+    newCart.items.length === 0
+      ? (newCart.subTotal = 0)
+      : (newCart.subTotal = newCart.items
+          .map((item: CartItem) => item.total)
+          .reduce((acc: number, next: number) => acc + next));
+
+    return newCart.save();
+  }
+
+  async emptyCart(userId: string): Promise<Cart> {
+    const cart = await this.cartModel.findOne({ user: userId });
+
+    if (!cart) {
+      throw new NotFoundException(
+        `This cart with user id: ${userId} not exists.`,
+      );
+    }
+
+    await this.cartItemService.deleteArrayItems(cart.items);
+
+    cart.items = [];
+    cart.subTotal = 0;
+
+    return cart.save();
   }
 }

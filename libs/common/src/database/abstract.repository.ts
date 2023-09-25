@@ -21,7 +21,7 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     if (!document) {
       this.logger.warn('Document not found with filter query', filterQuery);
       throw new NotFoundException(
-        `[${this.model.collection.collectionName}]: Document with filter query.`,
+        `[${this.model.collection.collectionName}]: Document with filter query not found.`,
       );
     }
 
@@ -53,7 +53,7 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     if (!document) {
       this.logger.warn('Document not found with filter query', filterQuery);
       throw new NotFoundException(
-        `[${this.model.collection.collectionName}]: Document with filter query.`,
+        `[${this.model.collection.collectionName}]: Document with filter query not found.`,
       );
     }
 
