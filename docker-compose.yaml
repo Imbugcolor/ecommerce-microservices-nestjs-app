@@ -35,3 +35,15 @@ services:
       - '3003:3003'
     volumes:
       - .:/usr/src/app
+  orders:
+    build: 
+      context: .
+      dockerfile: ./apps/orders/Dockerfile
+      target: development
+    command: npm run start:dev orders
+    env_file:
+      - ./apps/orders/.env
+    ports:
+      - '3006:3006'
+    volumes:
+      - .:/usr/src/app

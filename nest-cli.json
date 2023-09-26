@@ -43,6 +43,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/cart/tsconfig.app.json"
       }
+    },
+    "orders": {
+      "type": "application",
+      "root": "apps/orders",
+      "entryFile": "main",
+      "sourceRoot": "apps/orders/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/orders/tsconfig.app.json"
+      }
     }
   },
   "monorepo": true,

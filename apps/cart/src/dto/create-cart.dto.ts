@@ -6,7 +6,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { CartItem } from '../cart-item/models/cart-item.schema';
+import { CartItem } from '@app/common';
 import { Type } from 'class-transformer';
 import { Types } from 'mongoose';
 

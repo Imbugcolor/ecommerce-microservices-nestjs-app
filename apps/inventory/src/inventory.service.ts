@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ProductsService } from './products/products.service';
 import { VariantService } from './variant/variant.service';
-import { Product, Variant } from '@app/common';
+import { CartItem, Product, Variant } from '@app/common';
 
 @Injectable()
 export class InventoryService {
@@ -16,5 +16,13 @@ export class InventoryService {
 
   async variantValidate(id: string): Promise<Variant> {
     return this.variantService.validate(id);
+  }
+
+  async inventoryCount(data: { items: CartItem[]; resold: boolean }) {
+    return this.variantService.inventoryCount(data);
+  }
+
+  async soldCount(data: { items: CartItem[]; resold: boolean }) {
+    return this.productService.soldCount(data);
   }
 }

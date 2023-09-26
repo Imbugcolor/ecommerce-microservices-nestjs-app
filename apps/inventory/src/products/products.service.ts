@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { Product } from '@app/common';
+import { CartItem, Product } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
@@ -169,5 +169,38 @@ export class ProductsService {
     const product = await this.getProduct(id);
 
     return product;
+  }
+
+  async soldCount(data: { items: CartItem[]; resold: boolean }) {
+    const newItems = data.items.map((item) => {
+      return {
+        ...item,
+        productId: item.productId._id,
+      };
+    });
+
+    const groupBy = function (xs: any[], id: string) {
+      return xs.reduce(function (rv: any, x: any) {
+        (rv[x[id]] = rv[x[id]] || []).push(x);
+        return rv;
+      }, {});
+    };
+
+    const keyId = 'productId';
+    // Group by _id of items to calculate total sold each product in order items
+    const groupById = groupBy(newItems, keyId);
+
+    Object.keys(groupById).forEach((id) => {
+      const sumQuantity = groupById[id].reduce((acc: number, curr: any) => {
+        return acc + curr.quantity;
+      }, 0);
+      return this.updateSold(id, sumQuantity, data.resold);
+    });
+  }
+
+  async updateSold(id: string, quantity: number, resold: boolean) {
+    return this.productModel.findByIdAndUpdate(id, {
+      $inc: { sold: resold ? -quantity : quantity },
+    });
   }
 }

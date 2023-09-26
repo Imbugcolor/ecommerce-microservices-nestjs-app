@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { GetUser, JwtAuthGuard, User } from '@app/common';
-import { Cart } from './models/cart.schema';
+import { Cart } from '@app/common';
 import { AddCartDto } from './dto/add-cart.dto';
 import { UpdateCartAction } from './enums/update-cart-action.enum';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { DeleteCartItemDto } from './dto/delete-cart-item.dto';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('cart')
 export class CartController {
@@ -54,5 +55,15 @@ export class CartController {
   @UseGuards(JwtAuthGuard)
   emptyCart(@GetUser() user: User): Promise<Cart> {
     return this.cartService.emptyCart(user._id.toString());
+  }
+
+  @MessagePattern('get-cart')
+  async productValidate(@Payload() user: User) {
+    return this.cartService.getCartFromService(user._id.toString());
+  }
+
+  @MessagePattern('empty-cart')
+  async emptyCartFromService(@Payload() user: User) {
+    return this.cartService.emptyCartFromService(user._id.toString());
   }
 }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
 import { INVENTORY_SERVICE, Product, User } from '@app/common';
-import { Cart } from './models/cart.schema';
+import { Cart, CartItem } from '@app/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Types } from 'mongoose';
@@ -15,7 +15,6 @@ import { AddCartDto } from './dto/add-cart.dto';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CartItemService } from './cart-item/cart-item.service';
-import { CartItem } from './cart-item/models/cart-item.schema';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { UpdateCartAction } from './enums/update-cart-action.enum';
 import { DeleteCartItemDto } from './dto/delete-cart-item.dto';
@@ -151,7 +150,6 @@ export class CartService {
       );
       return res;
     } catch (error) {
-      console.log(error);
       throw new RpcException(error.response);
     }
   }
@@ -363,6 +361,48 @@ export class CartService {
     if (!cart) {
       throw new NotFoundException(
         `This cart with user id: ${userId} not exists.`,
+      );
+    }
+
+    await this.cartItemService.deleteArrayItems(cart.items);
+
+    cart.items = [];
+    cart.subTotal = 0;
+
+    return cart.save();
+  }
+
+  async getCartFromService(userId: string) {
+    const fcart = await this.cartModel
+      .findOne({ user: userId })
+      .populate({ path: 'items' });
+
+    if (!fcart) {
+      throw new RpcException(new NotFoundException('Cart is not found.'));
+    }
+
+    const cart = await fcart.populate([
+      {
+        path: 'items.productId',
+        select: 'product_id price total title images isPublished',
+      },
+      {
+        path: 'items.variantId',
+        select: '_id color size inventory productId',
+      },
+    ]);
+
+    return cart;
+  }
+
+  async emptyCartFromService(userId: string): Promise<Cart> {
+    const cart = await this.cartModel.findOne({ user: userId });
+
+    if (!cart) {
+      throw new RpcException(
+        new NotFoundException(
+          `This cart with user id: [${userId}] not exists.`,
+        ),
       );
     }
 

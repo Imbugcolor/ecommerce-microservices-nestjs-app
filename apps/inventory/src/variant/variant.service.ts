@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Variant } from '@app/common';
+import { CartItem, Variant } from '@app/common';
 import { FilterQuery, Model } from 'mongoose';
 import { VariantRepository } from './variant.repository';
 import { VariantType } from './types/variant.type';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class VariantService {
@@ -13,7 +19,13 @@ export class VariantService {
   ) {}
 
   async validate(id: string): Promise<Variant> {
-    return this.variantRepository.findById(id);
+    const variant = await this.variantRepository.findById(id);
+    if (!variant) {
+      throw new RpcException(
+        new NotFoundException(`This product id: [${id}] is not found.`),
+      );
+    }
+    return variant;
   }
 
   async createVariant(variant: VariantType): Promise<Variant> {
@@ -48,14 +60,59 @@ export class VariantService {
     return this.variantRepository.find(query);
   }
 
-  async updateInventory(
-    id: string,
-    quantity: number,
-    resold: boolean,
-  ): Promise<Variant> {
-    const newVariant = await this.variantRepository.findByIdAndUpdate(id, {
-      $inc: { inventory: resold ? quantity : -quantity },
-    });
-    return newVariant;
+  async checkInStock(items: CartItem[]) {
+    await Promise.all(
+      items.map(async (items) => {
+        const variant = await this.variantModel.findById(
+          items.variantId._id.toString(),
+        );
+
+        if (!variant) {
+          throw new RpcException(
+            new BadRequestException(
+              `Product has variant id : [${items.variantId._id.toString()}] is not found.`,
+            ),
+          );
+        }
+
+        if (variant.inventory - items.quantity < 0) {
+          throw new RpcException(
+            new BadRequestException(
+              `Inventory of product has variant: [${items.variantId._id.toString()}] is not enough.`,
+            ),
+          );
+        }
+
+        return variant;
+      }),
+    );
+  }
+
+  async inventoryCount(data: { items: CartItem[]; resold: boolean }) {
+    if (!data.resold) {
+      await this.checkInStock(data.items);
+    }
+
+    await Promise.all(
+      data.items.map(async (items) => {
+        try {
+          const newVariant = await this.variantRepository.findByIdAndUpdate(
+            items.variantId._id.toString(),
+            {
+              $inc: {
+                inventory: data.resold ? items.quantity : -items.quantity,
+              },
+            },
+          );
+          return newVariant;
+        } catch (error) {
+          throw new RpcException(
+            new InternalServerErrorException(error.message),
+          );
+        }
+      }),
+    );
+
+    return true;
   }
 }

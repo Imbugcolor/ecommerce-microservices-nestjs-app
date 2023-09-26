@@ -1,46 +1,41 @@
 import { Module } from '@nestjs/common';
-import { CartController } from './cart.controller';
-import { CartService } from './cart.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import * as Joi from 'joi';
+import { OrdersController } from './orders.controller';
+import { OrdersService } from './orders.service';
 import {
   AUTH_SERVICE,
+  CART_SERVICE,
   DatabaseModule,
   INVENTORY_SERVICE,
   LoggerModule,
-  Product,
-  ProductSchema,
   User,
   UserSchema,
 } from '@app/common';
-import { CartItemModule } from './cart-item/cart-item.module';
-import { Cart, CartSchema, CartItem, CartItemSchema } from '@app/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as Joi from 'joi';
+import { Order, OrderSchema } from './models/order.schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CartRepository } from './cart.repository';
 
 @Module({
   imports: [
     DatabaseModule,
     DatabaseModule.forFeature([
-      { name: Cart.name, schema: CartSchema },
+      { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
-      { name: Product.name, schema: ProductSchema },
-      { name: CartItem.name, schema: CartItemSchema },
     ]),
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
         MONGODB_URI: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
-        TCP_PORT: Joi.number().required(),
         AUTH_HOST: Joi.string().required(),
         AUTH_PORT: Joi.number().required(),
+        CART_HOST: Joi.string().required(),
+        CART_PORT: Joi.number().required(),
         INVENTORY_HOST: Joi.string().required(),
         INVENTORY_PORT: Joi.number().required(),
       }),
     }),
     LoggerModule,
-    CartItemModule,
     ClientsModule.registerAsync([
       {
         name: AUTH_SERVICE,
@@ -49,6 +44,17 @@ import { CartRepository } from './cart.repository';
           options: {
             host: configService.get('AUTH_HOST') /*define in docker-compose */,
             port: configService.get('AUTH_PORT'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: CART_SERVICE,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get('CART_HOST') /*define in docker-compose */,
+            port: configService.get('CART_PORT'),
           },
         }),
         inject: [ConfigService],
@@ -66,7 +72,7 @@ import { CartRepository } from './cart.repository';
       },
     ]),
   ],
-  controllers: [CartController],
-  providers: [CartService, CartRepository],
+  controllers: [OrdersController],
+  providers: [OrdersService],
 })
-export class CartModule {}
+export class OrdersModule {}

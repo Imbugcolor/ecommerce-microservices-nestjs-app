@@ -1,7 +1,8 @@
-import { AbstractDocument, User } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { CartItem } from '../cart-item/models/cart-item.schema';
+import { CartItem } from './cart-item.schema';
+import { AbstractDocument } from '../database';
+import { User } from './user.schema';
 
 @Schema({ timestamps: true, versionKey: false })
 export class Cart extends AbstractDocument {

@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { CartItem } from '@app/common';
 
 @Controller('inventory')
 export class InventoryController {
@@ -14,5 +15,17 @@ export class InventoryController {
   @MessagePattern('variant-validate')
   async variantValidate(@Payload() data: string) {
     return this.inventoryService.variantValidate(data);
+  }
+
+  @MessagePattern('inventory-count')
+  async inventoryCount(
+    @Payload() data: { items: CartItem[]; resold: boolean },
+  ) {
+    return this.inventoryService.inventoryCount(data);
+  }
+
+  @EventPattern('sold-count')
+  async soldCount(@Payload() data: { items: CartItem[]; resold: boolean }) {
+    return this.inventoryService.soldCount(data);
   }
 }
