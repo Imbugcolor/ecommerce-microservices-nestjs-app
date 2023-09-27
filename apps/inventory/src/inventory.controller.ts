@@ -13,8 +13,8 @@ export class InventoryController {
   }
 
   @MessagePattern('variant-validate')
-  async variantValidate(@Payload() data: string) {
-    return this.inventoryService.variantValidate(data);
+  async variantValidate(@Payload() data: { id: string; quantity: number }) {
+    return this.inventoryService.variantValidate(data.id, data.quantity);
   }
 
   @MessagePattern('inventory-count')

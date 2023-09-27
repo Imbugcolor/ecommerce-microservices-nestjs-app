@@ -7,3 +7,4 @@ export * from './decorators';
 export * from './models';
 export * from './types';
 export * from './exceptions';
+export * from './middleware';

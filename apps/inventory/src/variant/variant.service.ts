@@ -18,11 +18,17 @@ export class VariantService {
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
   ) {}
 
-  async validate(id: string): Promise<Variant> {
+  async validate(id: string, quantity: number): Promise<Variant> {
     const variant = await this.variantRepository.findById(id);
     if (!variant) {
       throw new RpcException(
-        new NotFoundException(`This product id: [${id}] is not found.`),
+        new NotFoundException(`Product has variant id: [${id}] is not found.`),
+      );
+    }
+
+    if (variant.inventory < quantity) {
+      throw new RpcException(
+        new NotFoundException(`Product has variant id: [${id}] is not enough.`),
       );
     }
     return variant;

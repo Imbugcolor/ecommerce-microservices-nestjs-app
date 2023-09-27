@@ -14,8 +14,8 @@ export class InventoryService {
     return this.productService.validate(id);
   }
 
-  async variantValidate(id: string): Promise<Variant> {
-    return this.variantService.validate(id);
+  async variantValidate(id: string, quantity: number): Promise<Variant> {
+    return this.variantService.validate(id, quantity);
   }
 
   async inventoryCount(data: { items: CartItem[]; resold: boolean }) {

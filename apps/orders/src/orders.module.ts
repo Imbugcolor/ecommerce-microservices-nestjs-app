@@ -1,4 +1,10 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+  forwardRef,
+} from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import {
@@ -14,6 +20,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { Order, OrderSchema } from './models/order.schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PaymentsModule } from './payments/payments.module';
+import { StripeWebhookModule } from './stripe-webhook/stripe-webhook.module';
+import { StripeModule } from 'nestjs-stripe';
+import { JsonBodyMiddleware, RawBodyMiddleware } from '@app/common';
 
 @Module({
   imports: [
@@ -33,6 +43,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         CART_PORT: Joi.number().required(),
         INVENTORY_HOST: Joi.string().required(),
         INVENTORY_PORT: Joi.number().required(),
+        STRIPE_SECRET_KEY: Joi.string().required(),
+        CLIENT_CART_URL: Joi.string().required(),
+        WEB_HOOK_SECRET: Joi.string().required(),
       }),
     }),
     LoggerModule,
@@ -71,8 +84,30 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         inject: [ConfigService],
       },
     ]),
+    StripeModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        apiKey: configService.get('STRIPE_SECRET_KEY'),
+        apiVersion: '2023-08-16',
+      }),
+    }),
+    PaymentsModule,
+    forwardRef(() => StripeWebhookModule),
   ],
   controllers: [OrdersController],
   providers: [OrdersService],
+  exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule implements NestModule {
+  public configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(RawBodyMiddleware)
+      .forRoutes({
+        path: '/webhook',
+        method: RequestMethod.POST,
+      })
+      .apply(JsonBodyMiddleware)
+      .forRoutes('*');
+  }
+}

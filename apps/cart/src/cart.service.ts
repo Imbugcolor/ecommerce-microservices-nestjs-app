@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
-import { INVENTORY_SERVICE, Product, User } from '@app/common';
+import { INVENTORY_SERVICE, Product, User, Variant } from '@app/common';
 import { Cart, CartItem } from '@app/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -154,11 +154,26 @@ export class CartService {
     }
   }
 
+  async validateItem(id: string, quantity: number) {
+    try {
+      const res = await firstValueFrom(
+        this.inventoryService.send<Variant>('variant-validate', {
+          id,
+          quantity,
+        }),
+      );
+      return res;
+    } catch (error) {
+      throw new RpcException(error.response);
+    }
+  }
+
   async addCart(addCartDto: AddCartDto, user: User): Promise<Cart> {
     const { productId, variantId, quantity } = addCartDto;
 
     const cart = await this.validate(user._id, null);
 
+    // validate item before add cart
     const product = await this.getProduct(productId);
 
     if (!product.variants.find((variant) => variant.toString() === variantId)) {
@@ -167,6 +182,9 @@ export class CartService {
       );
     }
 
+    await this.validateItem(variantId, quantity);
+
+    // create new item object
     const newItem = {
       productId,
       variantId,
