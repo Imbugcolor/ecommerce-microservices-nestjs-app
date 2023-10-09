@@ -5,3 +5,4 @@ export * from './category.schema';
 export * from './review.schema';
 export * from './cart.schema';
 export * from './cart-item.schema';
+export * from './order.schema';

@@ -10,7 +10,7 @@ COPY nest-cli.json nest-cli.json
 COPY apps/auth apps/auth
 COPY libs libs
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 RUN npm run build auth
 

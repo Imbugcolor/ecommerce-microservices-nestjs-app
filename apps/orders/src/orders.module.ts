@@ -18,7 +18,7 @@ import {
 } from '@app/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
-import { Order, OrderSchema } from './models/order.schema';
+import { Order, OrderSchema } from '@app/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PaymentsModule } from './payments/payments.module';
 import { StripeWebhookModule } from './stripe-webhook/stripe-webhook.module';

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order } from './models/order.schema';
+import { Order } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateOrderFromCartDto } from './dto/create-order-from-cart.dto';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@app/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { OrderMethod } from './enums/order-method.enum';
+import { OrderMethod } from '../../../libs/common/src/enums/order-method.enum';
 import Stripe from 'stripe';
 import { PaymentsService } from './payments/payments.service';
 

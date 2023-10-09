@@ -9,7 +9,6 @@ import { CategoryModule } from '../category/category.module';
 import { Variant, VariantSchema } from '@app/common';
 import { Review, ReviewSchema } from '@app/common';
 import { VariantModule } from '../variant/variant.module';
-import { ReviewModule } from '../review/review.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -23,7 +22,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ]),
     CategoryModule,
     VariantModule,
-    ReviewModule,
     ClientsModule.registerAsync([
       {
         imports: [ConfigModule],

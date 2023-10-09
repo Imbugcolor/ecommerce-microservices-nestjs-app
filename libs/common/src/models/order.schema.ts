@@ -1,6 +1,7 @@
-import { AbstractDocument, AddressDto, User } from '@app/common';
+import { AbstractDocument, AddressDto } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { User } from './user.schema';
 import { OrderMethod } from '../enums/order-method.enum';
 import { OrderStatus } from '../enums/order-status.enum';
 import { OrderItem } from '../dto/order-item.dto';
