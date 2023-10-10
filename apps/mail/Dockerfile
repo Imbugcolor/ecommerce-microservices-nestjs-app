@@ -1,4 +1,4 @@
-FROM node:alpine As development
+FROM node:16-alpine As development
 
 WORKDIR /usr/src/app
 
@@ -10,11 +10,11 @@ COPY nest-cli.json nest-cli.json
 COPY apps/mail apps/mail
 COPY libs libs
 
-RUN npm install --legacy-peer-deps
+RUN npm install --force
 
 RUN npm run build mail
 
-FROM node:alpine as production
+FROM node:16-alpine as production
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
