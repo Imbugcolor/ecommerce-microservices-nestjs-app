@@ -9,3 +9,4 @@ export * from './types';
 export * from './exceptions';
 export * from './middleware';
 export * from './enums';
+export * from './cloudinary';
