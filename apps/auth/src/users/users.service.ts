@@ -42,7 +42,7 @@ export class UsersService {
 
     const url = `${this.configService.get(
       'BASE_URL',
-    )}/user/active/${active_token}`;
+    )}/users/active/${active_token}`;
 
     this.mailService.emit('send-mail', {
       email,
