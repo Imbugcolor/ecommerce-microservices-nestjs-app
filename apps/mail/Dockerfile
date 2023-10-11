@@ -7,12 +7,12 @@ COPY package-lock.json ./
 COPY tsconfig.json tsconfig.json
 COPY nest-cli.json nest-cli.json
 
-COPY apps/cart apps/cart
+COPY apps/mail apps/mail
 COPY libs libs
 
 RUN npm install --force
 
-RUN npm run build cart
+RUN npm run build mail
 
 FROM node:16-alpine as production
 
@@ -28,4 +28,4 @@ RUN npm install --prod
 
 COPY --from=development /usr/src/app/dist ./dist
 
-CMD ["node", "dist/apps/cart/main"]
+CMD ["node", "dist/apps/mail/main"]

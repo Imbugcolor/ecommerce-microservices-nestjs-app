@@ -47,3 +47,15 @@ services:
       - '3006:3006'
     volumes:
       - .:/usr/src/app
+  mail:
+    build: 
+      context: .
+      dockerfile: ./apps/mail/Dockerfile
+      target: development
+    command: npm run start:dev mail
+    env_file:
+      - ./apps/mail/.env
+    ports:
+      - '3007:3007'
+    volumes:
+      - .:/usr/src/app
