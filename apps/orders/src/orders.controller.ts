@@ -1,6 +1,14 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { GetUser, JwtAuthGuard, User } from '@app/common';
+import { GetUser, JwtAuthGuard, Order, User } from '@app/common';
 import { CreateOrderFromCartDto } from './dto/create-order-from-cart.dto';
 
 @Controller('orders')
@@ -11,6 +19,12 @@ export class OrdersController {
   // @UseGuards(JwtAuthGuard)
   getOrders() {
     return 'Checkout complete!';
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  getOrder(@Param('id') id: string, @GetUser() user: User): Promise<Order> {
+    return this.ordersService.getUserOrder(id, user);
   }
 
   @Post('create-cod-order')
@@ -32,5 +46,11 @@ export class OrdersController {
     @GetUser() user: User,
   ) {
     return this.ordersService.createCheckout(createOrderDto, user);
+  }
+
+  @Patch('/cancel/:id')
+  @UseGuards(JwtAuthGuard)
+  cancelOrder(@Param('id') id: string, @GetUser() user: User): Promise<Order> {
+    return this.ordersService.cancelOrder(id, user);
   }
 }

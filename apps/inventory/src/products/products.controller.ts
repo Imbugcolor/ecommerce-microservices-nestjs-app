@@ -17,6 +17,11 @@ import { JwtAuthGuard } from '@app/common';
 export class ProductsController {
   constructor(private productService: ProductsService) {}
 
+  @Get()
+  async getProducts(): Promise<Product[]> {
+    return this.productService.getProducts();
+  }
+
   @Get('/:id')
   async getProduct(@Param('id') id: string): Promise<Product> {
     return this.productService.getProduct(id);

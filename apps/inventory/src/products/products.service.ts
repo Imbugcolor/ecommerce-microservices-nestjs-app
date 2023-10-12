@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { CartItem, Product } from '@app/common';
+import { OrderItem, Product } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
@@ -53,6 +53,26 @@ export class ProductsService {
       throw new NotFoundException(`Product id: ${id} is not exist.`);
     }
     return product;
+  }
+
+  async getProducts(): Promise<Product[]> {
+    return this.productModel.find().populate([
+      {
+        path: 'variants',
+        select: 'size color inventory productId',
+      },
+      {
+        path: 'reviews',
+        select: 'rating comment user productId',
+      },
+      {
+        path: 'reviews',
+        populate: {
+          path: 'user',
+          select: 'username avatar',
+        },
+      },
+    ]);
   }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
@@ -171,7 +191,7 @@ export class ProductsService {
     return product;
   }
 
-  async soldCount(data: { items: CartItem[]; resold: boolean }) {
+  async soldCount(data: { items: OrderItem[]; resold: boolean }) {
     const newItems = data.items.map((item) => {
       return {
         ...item,

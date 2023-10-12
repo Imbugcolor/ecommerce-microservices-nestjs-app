@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CartItem, Variant } from '@app/common';
+import { OrderItem, Variant } from '@app/common';
 import { FilterQuery, Model } from 'mongoose';
 import { VariantRepository } from './variant.repository';
 import { VariantType } from './types/variant.type';
@@ -66,7 +66,7 @@ export class VariantService {
     return this.variantRepository.find(query);
   }
 
-  async checkInStock(items: CartItem[]) {
+  async checkInStock(items: OrderItem[]) {
     await Promise.all(
       items.map(async (items) => {
         const variant = await this.variantModel.findById(
@@ -94,7 +94,7 @@ export class VariantService {
     );
   }
 
-  async inventoryCount(data: { items: CartItem[]; resold: boolean }) {
+  async inventoryCount(data: { items: OrderItem[]; resold: boolean }) {
     if (!data.resold) {
       await this.checkInStock(data.items);
     }

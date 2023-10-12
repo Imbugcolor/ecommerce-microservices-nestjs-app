@@ -24,6 +24,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { StripeWebhookModule } from './stripe-webhook/stripe-webhook.module';
 import { StripeModule } from 'nestjs-stripe';
 import { JsonBodyMiddleware, RawBodyMiddleware } from '@app/common';
+import { OrdersRepository } from './orders.repository';
 
 @Module({
   imports: [
@@ -96,8 +97,8 @@ import { JsonBodyMiddleware, RawBodyMiddleware } from '@app/common';
     forwardRef(() => StripeWebhookModule),
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
-  exports: [OrdersService],
+  providers: [OrdersService, OrdersRepository],
+  exports: [OrdersService, OrdersRepository],
 })
 export class OrdersModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

@@ -20,8 +20,6 @@ export class PaymentsService {
   ) {
     const { name, phone, address } = createOrderDto;
 
-    console.log(cart);
-
     const customer = await this.stripe.customers.create({
       metadata: {
         name,
@@ -53,5 +51,13 @@ export class PaymentsService {
     });
 
     return { url: session.url, status: session.payment_status };
+  }
+
+  // refund payment
+  async refundPayment(paymentId: string, amount: number) {
+    return await this.stripe.refunds.create({
+      payment_intent: paymentId,
+      amount,
+    });
   }
 }

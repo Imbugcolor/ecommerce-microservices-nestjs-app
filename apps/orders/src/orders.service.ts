@@ -1,12 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order } from '@app/common';
+import { Order, OrderItem, OrderStatus } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateOrderFromCartDto } from './dto/create-order-from-cart.dto';
 import {
   CART_SERVICE,
   Cart,
-  CartItem,
   INVENTORY_SERVICE,
   User,
   Variant,
@@ -16,10 +15,12 @@ import { firstValueFrom } from 'rxjs';
 import { OrderMethod } from '../../../libs/common/src/enums/order-method.enum';
 import Stripe from 'stripe';
 import { PaymentsService } from './payments/payments.service';
+import { OrdersRepository } from './orders.repository';
 
 @Injectable()
 export class OrdersService {
   constructor(
+    private readonly ordersRepository: OrdersRepository,
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @Inject(CART_SERVICE) private readonly cartService: ClientProxy,
     @Inject(INVENTORY_SERVICE) private readonly inventoryService: ClientProxy,
@@ -49,6 +50,13 @@ export class OrdersService {
     } catch (error) {
       throw new RpcException(error.response);
     }
+  }
+
+  async getUserOrder(id: string, user: User): Promise<Order> {
+    return await this.ordersRepository.findOne({
+      _id: id,
+      user: user._id.toString(),
+    });
   }
 
   async createCodOrderFromCart(
@@ -112,7 +120,7 @@ export class OrdersService {
       name: customer.metadata.name,
       email: user.email,
       items: cart.items,
-      paymentID: data.payment_intent,
+      paymentId: data.payment_intent,
       address,
       total: data.amount_total / 100,
       phone: customer.metadata.phone,
@@ -129,11 +137,39 @@ export class OrdersService {
     return newOrder.save();
   }
 
-  async soldCount(items: CartItem[], resold: boolean) {
+  // cancel order
+  async cancelOrder(id: string, user: User): Promise<Order> {
+    const oldOrder = await this.getUserOrder(id, user);
+
+    if (oldOrder.status === OrderStatus.CANCELED) {
+      throw new BadRequestException(`The order: ${id} is already canceled.`);
+    }
+
+    if (
+      oldOrder.status === OrderStatus.SHIPPING ||
+      oldOrder.status === OrderStatus.DELIVERED ||
+      oldOrder.status === OrderStatus.COMPLETED
+    ) {
+      throw new BadRequestException(`The order: ${id} could not canceled.`);
+    }
+
+    const newOrder = await this.orderModel.findByIdAndUpdate(
+      id,
+      { status: OrderStatus.CANCELED },
+      { new: true },
+    );
+
+    await this.inventoryCount(oldOrder.items, true);
+    await this.soldCount(oldOrder.items, true);
+
+    return newOrder;
+  }
+
+  async soldCount(items: OrderItem[], resold: boolean) {
     return this.inventoryService.emit('sold-count', { items, resold });
   }
 
-  async inventoryCount(items: CartItem[], resold: boolean) {
+  async inventoryCount(items: OrderItem[], resold: boolean) {
     try {
       await firstValueFrom(
         this.inventoryService.send('inventory-count', { items, resold }),
