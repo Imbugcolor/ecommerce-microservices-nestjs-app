@@ -10,7 +10,9 @@ COPY nest-cli.json nest-cli.json
 COPY apps/mail apps/mail
 COPY libs libs
 
-RUN npm install --force
+RUN npm install
+
+RUN cd apps/mail && npm install
 
 RUN npm run build mail
 

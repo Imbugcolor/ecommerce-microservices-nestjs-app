@@ -10,7 +10,7 @@ COPY nest-cli.json nest-cli.json
 COPY apps/inventory apps/inventory
 COPY libs libs
 
-RUN npm install --force
+RUN npm install
 
 RUN npm run build inventory
 

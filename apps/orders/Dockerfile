@@ -10,7 +10,9 @@ COPY nest-cli.json nest-cli.json
 COPY apps/orders apps/orders
 COPY libs libs
 
-RUN npm install --force
+RUN npm install
+
+RUN cd apps/orders && npm install --force
 
 RUN npm run build orders
 
