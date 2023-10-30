@@ -66,4 +66,9 @@ export class CartController {
   async emptyCartFromService(@Payload() user: User) {
     return this.cartService.emptyCartFromService(user._id.toString());
   }
+
+  @MessagePattern('update-price')
+  async updatePrice(@Payload() data: { productId: string; price: number }) {
+    return this.cartService.updatePriceCartItem(data.productId, data.price);
+  }
 }

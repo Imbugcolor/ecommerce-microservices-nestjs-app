@@ -104,4 +104,14 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
   async deleteMany(filterQuery: FilterQuery<TDocument>) {
     return this.model.deleteMany(filterQuery);
   }
+
+  async updateMany(
+    filterQuery: FilterQuery<TDocument>,
+    update: UpdateQuery<TDocument>,
+  ) {
+    return this.model.updateMany(filterQuery, update, {
+      lean: true,
+      new: true,
+    });
+  }
 }

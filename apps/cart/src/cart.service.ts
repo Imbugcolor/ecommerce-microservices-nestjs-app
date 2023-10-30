@@ -120,8 +120,47 @@ export class CartService {
                       .map((item) => item.total)
                       .reduce((acc, next) => acc + next));
 
-                cart = await newCart.save();
-                await cart.populate([
+                const updateCart = await newCart.save();
+                cart = await updateCart.populate([
+                  {
+                    path: 'items.productId',
+                    select: 'name price total',
+                  },
+                  {
+                    path: 'items.variantId',
+                    select: '_id color size inventory productId',
+                  },
+                ]);
+              }
+            }
+            if (item.productId && item.productId.price !== item.price) {
+              await this.cartItemService.updatePriceItem(item._id.toString(), {
+                price: item.productId.price,
+                total: item.productId.price * item.quantity,
+              });
+
+              const newCart = await this.cartModel
+                .findOne({ user: user._id })
+                .populate([
+                  {
+                    path: 'items.productId',
+                    select: 'product_id price total title images isPublished',
+                  },
+                  {
+                    path: 'items.variantId',
+                    select: '_id color size inventory productId',
+                  },
+                ]);
+
+              if (newCart) {
+                newCart.items.length <= 0
+                  ? (newCart.subTotal = 0)
+                  : (newCart.subTotal = newCart.items
+                      .map((item) => item.total)
+                      .reduce((acc, next) => acc + next));
+
+                const updateCart = await newCart.save();
+                cart = await updateCart.populate([
                   {
                     path: 'items.productId',
                     select: 'name price total',
@@ -430,5 +469,9 @@ export class CartService {
     cart.subTotal = 0;
 
     return cart.save();
+  }
+
+  async updatePriceCartItem(productId: string, price: number) {
+    return this.cartItemService.updatePrice(productId, price);
   }
 }

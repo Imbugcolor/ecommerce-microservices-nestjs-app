@@ -23,6 +23,15 @@ export class Product extends AbstractDocument {
   @Prop({ required: true })
   price: number;
 
+  @Prop()
+  discount: number;
+
+  @Prop()
+  discount_start_date: Date;
+
+  @Prop()
+  discount_end_date: Date;
+
   @Prop({ required: true })
   images: ProductImageType[];
 

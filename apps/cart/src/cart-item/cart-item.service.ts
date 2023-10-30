@@ -32,4 +32,18 @@ export class CartItemService {
   async deleteArrayItems(ids: CartItem[]): Promise<any> {
     return this.cartItemRepository.deleteMany({ _id: { $in: ids } });
   }
+
+  async updatePrice(product_id: string, price: number) {
+    return this.cartItemRepository.updateMany(
+      { productId: product_id },
+      { price },
+    );
+  }
+
+  async updatePriceItem(id: string, data: { price: number; total: number }) {
+    return this.cartItemRepository.findByIdAndUpdate(id, {
+      price: data.price,
+      total: data.total,
+    });
+  }
 }
