@@ -65,7 +65,7 @@ export class CartService {
 
   async getCart(user: User): Promise<Cart> {
     try {
-      let cart = await this.validate(user._id, null);
+      const cart = await this.validate(user._id, null);
 
       if (!cart) {
         const cartData = {
@@ -120,17 +120,7 @@ export class CartService {
                       .map((item) => item.total)
                       .reduce((acc, next) => acc + next));
 
-                const updateCart = await newCart.save();
-                cart = await updateCart.populate([
-                  {
-                    path: 'items.productId',
-                    select: 'name price total',
-                  },
-                  {
-                    path: 'items.variantId',
-                    select: '_id color size inventory productId',
-                  },
-                ]);
+                await newCart.save();
               }
             }
             if (item.productId && item.productId.price !== item.price) {
@@ -159,23 +149,13 @@ export class CartService {
                       .map((item) => item.total)
                       .reduce((acc, next) => acc + next));
 
-                const updateCart = await newCart.save();
-                cart = await updateCart.populate([
-                  {
-                    path: 'items.productId',
-                    select: 'name price total',
-                  },
-                  {
-                    path: 'items.variantId',
-                    select: '_id color size inventory productId',
-                  },
-                ]);
+                await newCart.save();
               }
             }
           }),
         );
       }
-      return cart;
+      return this.validate(user._id, null);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();

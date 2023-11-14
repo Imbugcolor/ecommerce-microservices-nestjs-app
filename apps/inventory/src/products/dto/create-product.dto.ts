@@ -5,7 +5,6 @@ import {
   ValidateNested,
   IsArray,
   ArrayNotEmpty,
-  IsDate,
 } from 'class-validator';
 import { VariantType } from '../../variant/types/variant.type';
 import { Type } from 'class-transformer';
@@ -27,15 +26,7 @@ export class CreateProductDto {
   price: number;
 
   @IsNumber()
-  discount: number;
-
-  @IsDate()
-  @Type(() => Date)
-  discount_start_date: Date;
-
-  @IsDate()
-  @Type(() => Date)
-  discount_end_date: Date;
+  base_price: number;
 
   @IsArray()
   @ArrayNotEmpty()

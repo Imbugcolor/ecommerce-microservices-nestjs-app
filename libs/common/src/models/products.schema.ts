@@ -1,10 +1,11 @@
 import { AbstractDocument } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Category } from './category.schema';
 import { Variant } from './variant.schema';
 import { ProductImageType } from '../types/product-image.type';
 import { Review } from './review.schema';
+import { Discount } from './discounts.schema';
 
 @Schema({ versionKey: false, timestamps: true })
 export class Product extends AbstractDocument {
@@ -23,14 +24,14 @@ export class Product extends AbstractDocument {
   @Prop({ required: true })
   price: number;
 
-  @Prop()
-  discount: number;
+  @Prop({ required: true })
+  base_price: number;
 
-  @Prop()
-  discount_start_date: Date;
+  @Prop({ default: false })
+  isDiscount: boolean;
 
-  @Prop()
-  discount_end_date: Date;
+  @Prop({ type: Types.ObjectId, ref: Discount.name })
+  discountId: Discount;
 
   @Prop({ required: true })
   images: ProductImageType[];
