@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { OrderItem, Product } from '@app/common';
+import { Discount, OrderItem, Product } from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
@@ -19,6 +19,7 @@ export class ProductsService {
     private productRepository: ProductRepository,
     @InjectModel(Product.name) private productModel: Model<Product>,
     private variantService: VariantService,
+    @InjectModel(Discount.name) private discountModel: Model<Discount>,
   ) {}
 
   async validate(id: string): Promise<Product> {
@@ -81,7 +82,6 @@ export class ProductsService {
       title,
       description,
       content,
-      base_price,
       price,
       images,
       category,
@@ -94,7 +94,7 @@ export class ProductsService {
       title: title.toLowerCase(),
       content,
       description,
-      base_price,
+      base_price: price,
       price,
       images,
       category,
@@ -141,7 +141,28 @@ export class ProductsService {
 
     const { variants, ...updateQuery } = updateProductDto;
 
-    await this.productRepository.findByIdAndUpdate(id, updateQuery);
+    if (updateQuery.price) {
+      if (oldProduct.isDiscount && oldProduct.discountId) {
+        const discount = await this.discountModel.findById(
+          oldProduct.discountId,
+        );
+
+        await this.productRepository.findByIdAndUpdate(id, {
+          ...updateQuery,
+          price:
+            updateQuery.price -
+            updateQuery.price * (discount.discount_value / 100),
+          base_price: updateQuery.price,
+        });
+      } else {
+        await this.productRepository.findByIdAndUpdate(id, {
+          ...updateQuery,
+          base_price: updateQuery.price,
+        });
+      }
+    } else {
+      await this.productRepository.findByIdAndUpdate(id, updateQuery);
+    }
 
     if (variants) {
       // Remove variants in variants schema if it removed in variants field of products schema

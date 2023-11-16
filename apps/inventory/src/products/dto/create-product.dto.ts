@@ -25,9 +25,6 @@ export class CreateProductDto {
   @IsNumber()
   price: number;
 
-  @IsNumber()
-  base_price: number;
-
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })

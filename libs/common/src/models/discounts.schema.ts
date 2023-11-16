@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../database';
-import { Product } from './products.schema';
 
 @Schema({ versionKey: false, timestamps: true })
 export class Discount extends AbstractDocument {
@@ -17,4 +16,4 @@ export class Discount extends AbstractDocument {
   valid_until: Date;
 }
 
-export const DiscountSchema = SchemaFactory.createForClass(Product);
+export const DiscountSchema = SchemaFactory.createForClass(Discount);

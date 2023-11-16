@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UploadModule } from './upload/upload.module';
+import { DiscountModule } from './discount/discount.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { UploadModule } from './upload/upload.module';
       },
     ]),
     UploadModule,
+    DiscountModule,
   ],
   controllers: [InventoryController],
   providers: [InventoryService],
