@@ -6,6 +6,7 @@ import {
   Post,
   Patch,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Product, Role, Roles, RolesGuard } from '@app/common';
@@ -44,5 +45,12 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
   ): Promise<Product> {
     return this.productService.updateProduct(id, updateProductDto);
+  }
+
+  @Delete('/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  async deleteProduct(@Param('id') id: string) {
+    return this.productService.deleteProduct(id);
   }
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -12,6 +13,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { RpcException } from '@nestjs/microservices';
+import { CategoryRepository } from '../category/category.repository';
 
 @Injectable()
 export class ProductsService {
@@ -20,6 +22,7 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     private variantService: VariantService,
     @InjectModel(Discount.name) private discountModel: Model<Discount>,
+    private categoryRepository: CategoryRepository,
   ) {}
 
   async validate(id: string): Promise<Product> {
@@ -49,6 +52,10 @@ export class ProductsService {
           select: 'username avatar',
         },
       },
+      {
+        path: 'discountId',
+        select: 'discount_value valid_until',
+      },
     ]);
     if (!product) {
       throw new NotFoundException(`Product id: ${id} is not exist.`);
@@ -73,6 +80,10 @@ export class ProductsService {
           select: 'username avatar',
         },
       },
+      {
+        path: 'discountId',
+        select: 'discount_value valid_until',
+      },
     ]);
   }
 
@@ -87,6 +98,18 @@ export class ProductsService {
       category,
       variants,
     } = createProductDto;
+
+    // validate category
+    try {
+      await this.categoryRepository.findById(category);
+    } catch (error) {
+      if (error.path === '_id' && error.kind === 'ObjectId') {
+        throw new BadRequestException(
+          '[_id] Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer ',
+        );
+      }
+      throw new InternalServerErrorException(error.message);
+    }
 
     const newProduct = new this.productModel({
       _id: new Types.ObjectId(),
@@ -119,8 +142,6 @@ export class ProductsService {
       return await newProduct.save();
     } catch (err) {
       if (err && err.code !== 11000) {
-        console.log(err);
-        console.log(err.code);
         throw new InternalServerErrorException();
       }
 
@@ -137,10 +158,25 @@ export class ProductsService {
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const oldProduct = await this.productModel.findById(id);
-
     const { variants, ...updateQuery } = updateProductDto;
 
+    // validate category
+    if (updateQuery.category) {
+      try {
+        await this.categoryRepository.findById(updateQuery.category);
+      } catch (error) {
+        if (error.path === '_id' && error.kind === 'ObjectId') {
+          throw new BadRequestException(
+            '[_id] Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer ',
+          );
+        }
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+
+    const oldProduct = await this.productModel.findById(id);
+
+    // check product is on sale
     if (updateQuery.price) {
       if (oldProduct.isDiscount && oldProduct.discountId) {
         const discount = await this.discountModel.findById(
@@ -245,5 +281,17 @@ export class ProductsService {
     return this.productModel.findByIdAndUpdate(id, {
       $inc: { sold: resold ? -quantity : quantity },
     });
+  }
+
+  async deleteProduct(id: string) {
+    const product = await this.productRepository.findById(id);
+
+    const variantIds: string[] = [];
+    product.variants.map((variant) => variantIds.push(variant.toString()));
+
+    await this.productRepository.findByIdAndDelete(id);
+    await this.variantService.deleteMany(variantIds);
+
+    return { msg: 'Delete Successfully.' };
   }
 }

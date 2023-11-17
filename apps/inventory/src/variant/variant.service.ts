@@ -121,4 +121,8 @@ export class VariantService {
 
     return true;
   }
+
+  async deleteMany(ids: string[]) {
+    return this.variantRepository.deleteMany(ids);
+  }
 }

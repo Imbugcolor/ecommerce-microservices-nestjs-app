@@ -115,6 +115,6 @@ export class DiscountService {
       }),
     );
 
-    return { msg: 'Canceled success.' };
+    return { msg: 'Discount canceled Successfully.' };
   }
 }
