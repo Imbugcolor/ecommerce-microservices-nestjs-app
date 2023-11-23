@@ -1,9 +1,9 @@
 import { IsDefined, IsNotEmptyObject, ValidateNested } from 'class-validator';
 import { CardDto } from './card.dto';
-import { CreateOrderFromCartDto } from './create-order-from-cart.dto';
+import { CreateOrderDto } from './create-order.dto';
 import { Type } from 'class-transformer';
 
-export class CreateOrderByCardDto extends CreateOrderFromCartDto {
+export class CreateOrderByCardDto extends CreateOrderDto {
   @IsDefined()
   @IsNotEmptyObject()
   @ValidateNested()

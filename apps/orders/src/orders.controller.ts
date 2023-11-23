@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { GetUser, JwtAuthGuard, Order, User } from '@app/common';
-import { CreateOrderFromCartDto } from './dto/create-order-from-cart.dto';
+import { CreateOrderDto } from './dto/create-order.dto';
 
 @Controller('orders')
 export class OrdersController {
@@ -30,19 +30,16 @@ export class OrdersController {
   @Post('create-cod-order')
   @UseGuards(JwtAuthGuard)
   createCodOrder(
-    @Body() createOrderFromCartDto: CreateOrderFromCartDto,
+    @Body() createOrderDto: CreateOrderDto,
     @GetUser() user: User,
   ) {
-    return this.ordersService.createCodOrderFromCart(
-      createOrderFromCartDto,
-      user,
-    );
+    return this.ordersService.createCodOrder(createOrderDto, user);
   }
 
   @Post('create-checkout-order')
   @UseGuards(JwtAuthGuard)
   createCheckout(
-    @Body() createOrderDto: CreateOrderFromCartDto,
+    @Body() createOrderDto: CreateOrderDto,
     @GetUser() user: User,
   ) {
     return this.ordersService.createCheckout(createOrderDto, user);

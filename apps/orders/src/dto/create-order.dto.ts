@@ -7,8 +7,9 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { ItemDto } from './item.dto';
 
-export class CreateOrderFromCartDto {
+export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -22,4 +23,7 @@ export class CreateOrderFromCartDto {
   @ValidateNested()
   @Type(() => AddressDto)
   address: AddressDto;
+
+  @Type(() => ItemDto)
+  item?: ItemDto;
 }
