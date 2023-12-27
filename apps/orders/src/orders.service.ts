@@ -12,7 +12,7 @@ import {
 } from '@app/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { OrderMethod } from '../../../libs/common/src/enums/order-method.enum';
+import { OrderMethod } from '@app/common';
 import Stripe from 'stripe';
 import { PaymentsService } from './payments/payments.service';
 import { OrdersRepository } from './orders.repository';

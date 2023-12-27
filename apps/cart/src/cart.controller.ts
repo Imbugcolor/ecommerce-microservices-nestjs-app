@@ -29,26 +29,37 @@ export class CartController {
 
   @Patch('increment')
   @UseGuards(JwtAuthGuard)
-  increment(@Body() updateCartDto: UpdateCartDto): Promise<Cart> {
+  increment(
+    @Body() updateCartDto: UpdateCartDto,
+    @GetUser() user: User,
+  ): Promise<Cart> {
     return this.cartService.updateCart(
       updateCartDto,
       UpdateCartAction.INCREMENT,
+      user,
     );
   }
 
   @Patch('decrement')
   @UseGuards(JwtAuthGuard)
-  decrement(@Body() updateCartDto: UpdateCartDto): Promise<Cart> {
+  decrement(
+    @Body() updateCartDto: UpdateCartDto,
+    @GetUser() user: User,
+  ): Promise<Cart> {
     return this.cartService.updateCart(
       updateCartDto,
       UpdateCartAction.DECREMENT,
+      user,
     );
   }
 
   @Patch('delete-item')
   @UseGuards(JwtAuthGuard)
-  deleteItem(@Body() deleteCartItemDto: DeleteCartItemDto): Promise<Cart> {
-    return this.cartService.deleteCartItem(deleteCartItemDto);
+  deleteItem(
+    @Body() deleteCartItemDto: DeleteCartItemDto,
+    @GetUser() user: User,
+  ): Promise<Cart> {
+    return this.cartService.deleteCartItem(deleteCartItemDto, user);
   }
 
   @Patch('empty-cart')
