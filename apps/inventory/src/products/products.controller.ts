@@ -7,20 +7,29 @@ import {
   Patch,
   UseGuards,
   Delete,
+  Query,
+  Logger,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { Product, Role, Roles, RolesGuard } from '@app/common';
+import { DataResponse, Product, Role, Roles, RolesGuard } from '@app/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '@app/common';
+import { ProductQuery } from './input/product-query';
 
 @Controller('products')
 export class ProductsController {
+  private readonly logger = new Logger(ProductsController.name);
   constructor(private productService: ProductsService) {}
 
   @Get()
-  async getProducts(): Promise<Product[]> {
-    return this.productService.getProducts();
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async getProducts(
+    @Query() productQuery: ProductQuery,
+  ): Promise<DataResponse<Product>> {
+    return this.productService.getProducts(productQuery);
   }
 
   @Get('/:id')

@@ -3,28 +3,58 @@ import {
   Controller,
   Get,
   Param,
+  Query,
   Patch,
   Post,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { GetUser, JwtAuthGuard, Order, User } from '@app/common';
+import {
+  DataResponse,
+  GetUser,
+  JwtAuthGuard,
+  Order,
+  Role,
+  Roles,
+  RolesGuard,
+  User,
+} from '@app/common';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrdersQuery } from './input/orders-query';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  // @UseGuards(JwtAuthGuard)
-  getOrders() {
-    return 'Checkout complete!';
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  getAllOrders(
+    @Query() ordersQuery: OrdersQuery,
+  ): Promise<DataResponse<Order>> {
+    return this.ordersService.getAllOrders(ordersQuery);
+  }
+
+  @Get('me')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @UseGuards(JwtAuthGuard)
+  getOrdersByUser(
+    @Query() ordersQuery: OrdersQuery,
+    @GetUser() user: User,
+  ): Promise<DataResponse<Order>> {
+    return this.ordersService.getOrdersByUser(ordersQuery, user);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  getOrder(@Param('id') id: string, @GetUser() user: User): Promise<Order> {
-    return this.ordersService.getUserOrder(id, user);
+  getOrderByUser(
+    @Param('id') id: string,
+    @GetUser() user: User,
+  ): Promise<Order> {
+    return this.ordersService.getOrderByUser(id, user);
   }
 
   @Post('create-cod-order')

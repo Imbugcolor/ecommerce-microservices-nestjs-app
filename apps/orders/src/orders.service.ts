@@ -1,6 +1,18 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderItem, OrderStatus, Product } from '@app/common';
+import {
+  DataListQuery,
+  DataResponse,
+  Order,
+  OrderItem,
+  OrderStatus,
+  Product,
+} from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateOrderDto } from './dto/create-order.dto';
 import {
@@ -17,6 +29,7 @@ import Stripe from 'stripe';
 import { PaymentsService } from './payments/payments.service';
 import { OrdersRepository } from './orders.repository';
 import { CheckoutItem } from './types/checkout-item.type';
+import { OrdersQuery } from './input/orders-query';
 
 @Injectable()
 export class OrdersService {
@@ -28,7 +41,7 @@ export class OrdersService {
     private readonly paymentsService: PaymentsService,
   ) {}
 
-  async getCart(user: User) {
+  private async getCart(user: User) {
     try {
       const res = await firstValueFrom(
         this.cartService.send<Cart>('get-cart', user),
@@ -39,7 +52,7 @@ export class OrdersService {
     }
   }
 
-  async getProduct(id: string) {
+  private async getProduct(id: string) {
     try {
       const res = await firstValueFrom(
         this.inventoryService.send<Product>('product-validate', id),
@@ -50,7 +63,7 @@ export class OrdersService {
     }
   }
 
-  async validateItem(id: string, quantity: number) {
+  private async validateItem(id: string, quantity: number) {
     try {
       const res = await firstValueFrom(
         this.inventoryService.send<Variant>('variant-validate', {
@@ -64,11 +77,69 @@ export class OrdersService {
     }
   }
 
-  async getUserOrder(id: string, user: User): Promise<Order> {
+  async getAllOrders(ordersQuery: OrdersQuery): Promise<DataResponse<Order>> {
+    try {
+      const newQuery = new DataListQuery(
+        this.orderModel.find(),
+        ordersQuery,
+      ).filtering();
+
+      const totalResult = await newQuery.query;
+
+      const dataQuery = new DataListQuery(this.orderModel.find(), ordersQuery)
+        .filtering()
+        .sorting()
+        .paginate();
+
+      const orders = await dataQuery.query.populate();
+
+      return {
+        total: totalResult.length,
+        totalPerPage: orders.length,
+        data: orders,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getOrderByUser(id: string, user: User): Promise<Order> {
     return await this.ordersRepository.findOne({
       _id: id,
       user: user._id.toString(),
     });
+  }
+
+  async getOrdersByUser(
+    ordersQuery: OrdersQuery,
+    user: User,
+  ): Promise<DataResponse<Order>> {
+    try {
+      const newQuery = new DataListQuery(
+        this.orderModel.find({ user: user._id }),
+        ordersQuery,
+      ).filtering();
+
+      const totalResult = await newQuery.query;
+
+      const dataQuery = new DataListQuery(
+        this.orderModel.find({ user: user._id }),
+        ordersQuery,
+      )
+        .filtering()
+        .sorting()
+        .paginate();
+
+      const orders = await dataQuery.query.populate();
+
+      return {
+        total: totalResult.length,
+        totalPerPage: orders.length,
+        data: orders,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async createCodOrder(
@@ -249,7 +320,7 @@ export class OrdersService {
 
   // cancel order
   async cancelOrder(id: string, user: User): Promise<Order> {
-    const oldOrder = await this.getUserOrder(id, user);
+    const oldOrder = await this.getOrderByUser(id, user);
 
     if (oldOrder.status === OrderStatus.CANCELED) {
       throw new BadRequestException(`The order: ${id} is already canceled.`);

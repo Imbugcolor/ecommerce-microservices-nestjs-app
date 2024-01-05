@@ -1,10 +1,14 @@
 import {
+  BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
+  InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from './users/users.repository';
-import { User } from '@app/common';
+import { MAIL_SERVICE, User } from '@app/common';
 import { LoginType } from '@app/common';
 import * as bcryptjs from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
@@ -13,6 +17,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +27,8 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<User>,
     private configService: ConfigService,
     private jwtService: JwtService,
+    @Inject(MAIL_SERVICE)
+    private mailService: ClientProxy,
   ) {}
 
   async login(
@@ -124,5 +132,92 @@ export class AuthService {
     await user.save();
 
     return { msg: 'Logged Out.' };
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt = await bcryptjs.genSalt();
+    return await bcryptjs.hash(password, salt);
+  }
+
+  public async forgotPassword(email: string): Promise<{ msg: string }> {
+    const userRecovery = await this.userModel.findOne({ email });
+
+    if (!userRecovery) {
+      throw new NotFoundException();
+    }
+
+    const secret =
+      this.configService.get('RECOVERY_PASSWORD_SECRET') +
+      userRecovery.password;
+    const token = this.jwtService.sign(
+      { email: userRecovery.email, id: userRecovery._id },
+      {
+        secret,
+        expiresIn: '5m',
+      },
+    );
+
+    const url = `${this.configService.get('URL_VERIFY_PASSWORD_RECOVERY')}/${
+      userRecovery._id
+    }/${token}`;
+
+    this.mailService.emit('send-mail', {
+      email,
+      url,
+      txt: 'Verify your password recovery.',
+    });
+
+    return { msg: 'Check your email to reset your password.' };
+  }
+
+  public async verifyUrlPasswordRecovery(tokenParams: {
+    id: string;
+    token: string;
+  }): Promise<{ msg: string }> {
+    const { id, token } = tokenParams;
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      const oldUser = await this.userRepository.findOne({ _id: id });
+      const secret =
+        this.configService.get<string>('RECOVERY_PASSWORD_SECRET') +
+        oldUser.password;
+      try {
+        this.jwtService.verify(token, {
+          secret,
+        });
+        return { msg: 'Verified' };
+      } catch (err) {
+        throw new InternalServerErrorException({ msg: err.message });
+      }
+    } else throw new BadRequestException({ msg: 'Invalid Token' });
+  }
+
+  public async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ msg: string }> {
+    const { id, token, password } = resetPasswordDto;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      const oldUser = await this.userRepository.findOne({ _id: id });
+
+      const secret =
+        this.configService.get<string>('RECOVERY_PASSWORD_SECRET') +
+        oldUser.password;
+      try {
+        this.jwtService.verify(token, {
+          secret,
+        });
+
+        const hashedPassword = await this.hashPassword(password);
+        await this.userRepository.findOneAndUpdate(
+          { _id: id },
+          {
+            password: hashedPassword,
+          },
+        );
+        return { msg: 'Password Updated.' };
+      } catch (err) {
+        throw new InternalServerErrorException({ msg: err.message });
+      }
+    } else throw new BadRequestException({ msg: 'Invalid Token' });
   }
 }

@@ -7,13 +7,20 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { Discount, OrderItem, Product } from '@app/common';
+import {
+  DataListQuery,
+  DataResponse,
+  Discount,
+  OrderItem,
+  Product,
+} from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { RpcException } from '@nestjs/microservices';
 import { CategoryRepository } from '../category/category.repository';
+import { ProductQuery } from './input/product-query';
 
 @Injectable()
 export class ProductsService {
@@ -63,28 +70,73 @@ export class ProductsService {
     return product;
   }
 
-  async getProducts(): Promise<Product[]> {
-    return this.productModel.find().populate([
-      {
-        path: 'variants',
-        select: 'size color inventory productId',
-      },
-      {
-        path: 'reviews',
-        select: 'rating comment user productId',
-      },
-      {
-        path: 'reviews',
-        populate: {
-          path: 'user',
-          select: 'username avatar',
+  async getProducts(
+    productQuery: ProductQuery,
+  ): Promise<DataResponse<Product>> {
+    try {
+      const variant_ids: string[] = [];
+      if (productQuery.sizes) {
+        const sizesArray = productQuery.sizes.split(',');
+
+        const variantsArr = await this.variantService.getVariantsByQuery({
+          size: { $in: sizesArray },
+        });
+        variantsArr.forEach((item) => {
+          return variant_ids.push(item._id.toString());
+        });
+      }
+
+      const dataQuery = new DataListQuery(
+        this.productModel.find(
+          productQuery.sizes && { variants: { $in: variant_ids } },
+        ),
+        productQuery,
+      )
+        .filtering()
+        .sorting();
+
+      const total = await dataQuery.query;
+
+      const productsQuery = new DataListQuery(
+        this.productModel.find(
+          productQuery.sizes && { variants: { $in: variant_ids } },
+        ),
+        productQuery,
+      )
+        .filtering()
+        .sorting()
+        .paginate();
+
+      const products = await productsQuery.query.populate([
+        {
+          path: 'variants',
+          select: 'size color inventory productId',
         },
-      },
-      {
-        path: 'discountId',
-        select: 'discount_value valid_until',
-      },
-    ]);
+        {
+          path: 'reviews',
+          select: 'rating comment user productId',
+        },
+        {
+          path: 'reviews',
+          populate: {
+            path: 'user',
+            select: 'username avatar',
+          },
+        },
+        {
+          path: 'discountId',
+          select: 'discount_value valid_until',
+        },
+      ]);
+
+      return {
+        total: total.length,
+        totalPerPage: products.length,
+        data: products,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {

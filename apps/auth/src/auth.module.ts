@@ -2,16 +2,20 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from './users/users.module';
-import { DatabaseModule, LoggerModule } from '@app/common';
+import { DatabaseModule, LoggerModule, MAIL_SERVICE } from '@app/common';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
 import { User, UserSchema } from '@app/common';
-
+import { AddressController } from '@app/common/address/address.controller';
+import { AddressService } from '@app/common/address/address.service';
+import { HttpModule } from '@nestjs/axios';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 @Module({
   imports: [
+    HttpModule,
     DatabaseModule,
     DatabaseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,
@@ -30,9 +34,27 @@ import { User, UserSchema } from '@app/common';
         BASE_URL: Joi.string().required(),
       }),
     }),
+    ClientsModule.registerAsync([
+      {
+        name: MAIL_SERVICE,
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get('MAIL_HOST'),
+            port: configService.get('MAIL_PORT'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
     JwtModule.register({}),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtRefreshTokenStrategy],
+  controllers: [AuthController, AddressController],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshTokenStrategy,
+    AddressService,
+  ],
 })
 export class AuthModule {}
