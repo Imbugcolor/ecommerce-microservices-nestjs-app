@@ -24,7 +24,13 @@ export class PaymentsService {
     const customer = await this.stripe.customers.create({
       metadata: {
         name,
-        user: JSON.stringify(user),
+        user: JSON.stringify({
+          ...user,
+          password: '',
+          roles: [],
+          avatar: '',
+          rf_token: '',
+        }),
         phone,
         address: JSON.stringify(address),
         items: createOrderDto.item

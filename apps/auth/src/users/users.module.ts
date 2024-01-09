@@ -17,10 +17,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       {
         name: MAIL_SERVICE,
         useFactory: async (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('MAIL_HOST'),
-            port: configService.get('MAIL_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'mail',
           },
         }),
         inject: [ConfigService],
