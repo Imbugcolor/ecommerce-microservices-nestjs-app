@@ -13,6 +13,7 @@ import { AddressController } from '@app/common/address/address.controller';
 import { AddressService } from '@app/common/address/address.service';
 import { HttpModule } from '@nestjs/axios';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { WishlistModule } from './wishlist/wishlist.module';
 @Module({
   imports: [
     HttpModule,
@@ -43,11 +44,17 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
             queue: 'mail',
           },
+          // transport: Transport.TCP,
+          // options: {
+          //   host: configService.get('MAIL_HOST') /*define in docker-compose */,
+          //   port: configService.get('MAIL_PORT'),
+          //},
         }),
         inject: [ConfigService],
       },
     ]),
     JwtModule.register({}),
+    WishlistModule,
   ],
   controllers: [AuthController, AddressController],
   providers: [

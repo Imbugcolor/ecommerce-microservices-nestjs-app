@@ -22,6 +22,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
             queue: 'mail',
           },
+          // transport: Transport.TCP,
+          // options: {
+          //   host: configService.get('MAIL_HOST') /*define in docker-compose */,
+          //   port: configService.get('MAIL_PORT'),
+          // },
         }),
         inject: [ConfigService],
       },
