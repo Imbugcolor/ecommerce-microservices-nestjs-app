@@ -1,0 +1,42 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mail
+  name: mail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail
+  template:
+    metadata:
+      labels:
+        app: mail
+    spec:
+      containers:
+      - image: vietdinh1801/ecommerce-microservices-nestjs-app-mail:production
+        name: mail
+        env:
+        - name: HTTP_PORT
+          value: '3007'
+        - name: TCP_PORT
+          value: '3008'
+        - name: MAIL_USERNAME
+          value: 'vtclothes.shop@gmail.com'
+        - name: MAIL_PASSWORD_APP
+          valueFrom:
+            secretKeyRef:
+              name: mail
+              key: passwordApp
+        - name: CLOUDINARY_NAME
+          value: 'dnv2v2tiz'
+        - name: CLOUDINARY_API_KEY
+          value: '335363687126965'
+        - name: CLOUDINARY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cloudinary
+              key: secretKey
+        ports:
+          - containerPort: 3008

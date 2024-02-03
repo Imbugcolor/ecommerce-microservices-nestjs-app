@@ -2,8 +2,8 @@ FROM node:16-alpine As development
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY apps/mail/package.json ./
+COPY apps/mail/package-lock.json ./
 COPY tsconfig.json tsconfig.json
 COPY nest-cli.json nest-cli.json
 
@@ -11,8 +11,6 @@ COPY apps/mail apps/mail
 COPY libs libs
 
 RUN npm install
-
-RUN cd apps/mail && npm install
 
 RUN npm run build mail
 
@@ -23,8 +21,8 @@ ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY apps/mail/package.json ./
+COPY apps/mail/package-lock.json ./
 
 RUN npm install --prod
 

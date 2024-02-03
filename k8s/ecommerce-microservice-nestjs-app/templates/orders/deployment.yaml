@@ -1,0 +1,66 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: orders
+  name: orders
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders
+  template:
+    metadata:
+      labels:
+        app: orders
+    spec:
+      containers:
+      - image: vietdinh1801/ecommerce-microservices-nestjs-app-orders:production
+        name: orders
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb
+              key: connectionString
+        - name: CLOUDINARY_NAME
+          value: 'dnv2v2tiz'
+        - name: CLOUDINARY_API_KEY
+          value: '335363687126965'
+        - name: CLOUDINARY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cloudinary
+              key: secretKey
+        - name: HTTP_PORT
+          value: '3006'
+        - name: MAIL_HOST
+          value: mail
+        - name: MAIL_PORT
+          value: '3008'
+        - name: AUTH_HOST
+          value: auth-tcp
+        - name: AUTH_PORT
+          value: '3002'
+        - name: CART_HOST
+          value: cart-tcp
+        - name: CART_PORT
+          value: '3004'
+        - name: INVENTORY_HOST
+          value: inventory-tcp
+        - name: INVENTORY_PORT
+          value: '3005'
+        - name: CLIENT_CART_URL
+          value: 'http://localhost:3006/orders'
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe
+              key: secretKey
+        - name: WEB_HOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: stripe
+              key: webhookSecret
+        ports:
+          - containerPort: 3006

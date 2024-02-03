@@ -1,0 +1,15 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: orders
+  name: orders
+spec:
+  ports:
+  - name: "http"
+    port: 3006
+    protocol: TCP
+    targetPort: 3006
+  selector:
+    app: orders
+  type: NodePort

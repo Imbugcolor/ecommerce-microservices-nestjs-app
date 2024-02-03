@@ -1,0 +1,15 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mail
+  name: mail
+spec:
+  ports:
+  - name: "3008"
+    port: 3008
+    protocol: TCP
+    targetPort: 3008
+  selector:
+    app: mail
+  type: ClusterIP

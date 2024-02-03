@@ -1,0 +1,16 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: inventory
+  name: inventory-tcp
+spec:
+  ports:
+  - name: "tcp"
+    port: 3005
+    protocol: TCP
+    targetPort: 3005
+  selector:
+    app: inventory
+  type: ClusterIP
+

@@ -2,17 +2,15 @@ FROM node:16-alpine As development
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY apps/orders/package.json ./
+COPY apps/orders/package-lock.json ./
 COPY tsconfig.json tsconfig.json
 COPY nest-cli.json nest-cli.json
 
 COPY apps/orders apps/orders
 COPY libs libs
 
-RUN npm install
-
-RUN cd apps/orders && npm install --force
+RUN npm install --force
 
 RUN npm run build orders
 
@@ -23,10 +21,10 @@ ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY apps/orders/package.json ./
+COPY apps/orders/package-lock.json ./
 
-RUN npm install --prod
+RUN npm install --force --prod
 
 COPY --from=development /usr/src/app/dist ./dist
 

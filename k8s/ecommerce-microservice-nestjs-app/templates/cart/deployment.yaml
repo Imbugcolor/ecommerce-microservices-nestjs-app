@@ -1,0 +1,49 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cart
+  name: cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart
+  template:
+    metadata:
+      labels:
+        app: cart
+    spec:
+      containers:
+      - image: vietdinh1801/ecommerce-microservices-nestjs-app-cart:production
+        name: cart
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb
+              key: connectionString
+        - name: HTTP_PORT
+          value: '3003'
+        - name: TCP_PORT
+          value: '3004'
+        - name: AUTH_HOST
+          value: auth-tcp
+        - name: AUTH_PORT
+          value: '3002'
+        - name: INVENTORY_HOST
+          value: inventory-tcp
+        - name: INVENTORY_PORT
+          value: '3005'
+        - name: CLOUDINARY_NAME
+          value: 'dnv2v2tiz'
+        - name: CLOUDINARY_API_KEY
+          value: '335363687126965'
+        - name: CLOUDINARY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cloudinary
+              key: secretKey
+        ports:
+          - containerPort: 3003
+          - containerPort: 3004
