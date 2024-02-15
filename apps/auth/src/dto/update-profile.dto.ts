@@ -1,25 +1,33 @@
 import { AddressDto } from '@app/common';
+import { UserGender } from '@app/common/enums/user-gender.enum';
 import { Type } from 'class-transformer';
 import {
-  IsNotEmpty,
+  IsDate,
+  IsEnum,
   IsNotEmptyObject,
   IsObject,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 
-export class CreateOrderFromCartDto {
+export class UpdateProfileDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsNotEmpty()
   phone: string;
 
+  @IsOptional()
   @IsObject()
   @IsNotEmptyObject()
   @ValidateNested()
   @Type(() => AddressDto)
   address: AddressDto;
+
+  @IsOptional()
+  @IsEnum(UserGender)
+  gender: UserGender;
+
+  @IsOptional()
+  @IsDate()
+  dateOfbirth: Date;
 }

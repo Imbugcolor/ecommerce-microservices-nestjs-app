@@ -1,9 +1,10 @@
-import { Cart, User } from '@app/common';
+import { User } from '@app/common';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { CreateOrderFromCartDto } from '../dto/create-order-from-cart.dto';
+import { CreateOrderDto } from '../dto/create-order.dto';
 import { InjectStripe } from 'nestjs-stripe';
+import { CheckoutItem } from '../types/checkout-item.type';
 
 @Injectable()
 export class PaymentsService {
@@ -14,25 +15,41 @@ export class PaymentsService {
 
   // Create Checkout Session = Stripe to Payment
   async createCheckout(
-    createOrderDto: CreateOrderFromCartDto,
+    createOrderDto: CreateOrderDto,
     user: User,
-    cart: Cart,
+    items: CheckoutItem[],
   ) {
     const { name, phone, address } = createOrderDto;
 
     const customer = await this.stripe.customers.create({
       metadata: {
         name,
-        user: JSON.stringify(user),
+        user: JSON.stringify({
+          ...user,
+          password: '',
+          roles: [],
+          avatar: '',
+          rf_token: '',
+        }),
         phone,
         address: JSON.stringify(address),
+        items: createOrderDto.item
+          ? JSON.stringify([
+              {
+                productId: items[0].productId,
+                quantiry: items[0].quantity,
+                price: items[0].price,
+                variantId: items[0].variantId,
+              },
+            ])
+          : JSON.stringify(null),
       },
     });
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      line_items: cart.items.map((item) => {
+      line_items: items.map((item) => {
         return {
           price_data: {
             currency: 'usd',

@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UploadModule } from './upload/upload.module';
+import { DiscountModule } from './discount/discount.module';
 
 @Module({
   imports: [
@@ -33,16 +34,17 @@ import { UploadModule } from './upload/upload.module';
       {
         name: AUTH_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('AUTH_HOST') /*define in docker-compose */,
-            port: configService.get('AUTH_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'auth',
           },
         }),
         inject: [ConfigService],
       },
     ]),
     UploadModule,
+    DiscountModule,
   ],
   controllers: [InventoryController],
   providers: [InventoryService],

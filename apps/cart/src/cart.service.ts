@@ -28,15 +28,10 @@ export class CartService {
     private readonly cartItemService: CartItemService,
   ) {}
 
-  async validate(userId: Types.ObjectId, cartId: string) {
-    let fcart: any;
-    if (cartId) {
-      fcart = await this.cartModel.findById(cartId).populate({ path: 'items' });
-    } else {
-      fcart = await this.cartModel
-        .findOne({ user: userId })
-        .populate({ path: 'items' });
-    }
+  async validate(id: Types.ObjectId | string) {
+    const fcart = await this.cartModel
+      .findOne({ $or: [{ user: id }, { _id: id }] })
+      .populate({ path: 'items' });
 
     if (!fcart) return;
 
@@ -65,7 +60,7 @@ export class CartService {
 
   async getCart(user: User): Promise<Cart> {
     try {
-      let cart = await this.validate(user._id, null);
+      const cart = await this.validate(user._id);
 
       if (!cart) {
         const cartData = {
@@ -78,40 +73,18 @@ export class CartService {
         await Promise.all(
           cart.items.map(async (item: CartItem) => {
             if (!item.productId && user) {
-              await this.cartModel
-                .findOneAndUpdate(
-                  { user: user._id },
-                  {
-                    $pull: {
-                      items: {
-                        _id: item._id,
-                      },
+              await this.cartModel.findOneAndUpdate(
+                { user: user._id },
+                {
+                  $pull: {
+                    items: {
+                      _id: item._id,
                     },
                   },
-                )
-                .populate([
-                  {
-                    path: 'items.productId',
-                    select: 'product_id price total title images isPublished',
-                  },
-                  {
-                    path: 'items.variantId',
-                    select: '_id color size inventory productId',
-                  },
-                ]);
+                },
+              );
 
-              const newCart = await this.cartModel
-                .findOne({ user: user._id })
-                .populate([
-                  {
-                    path: 'items.productId',
-                    select: 'product_id price total title images isPublished',
-                  },
-                  {
-                    path: 'items.variantId',
-                    select: '_id color size inventory productId',
-                  },
-                ]);
+              const newCart = await this.validate(user._id);
 
               if (newCart) {
                 newCart.items.length <= 0
@@ -120,25 +93,32 @@ export class CartService {
                       .map((item) => item.total)
                       .reduce((acc, next) => acc + next));
 
-                cart = await newCart.save();
-                await cart.populate([
-                  {
-                    path: 'items.productId',
-                    select: 'name price total',
-                  },
-                  {
-                    path: 'items.variantId',
-                    select: '_id color size inventory productId',
-                  },
-                ]);
+                await newCart.save();
+              }
+            }
+            if (item.productId && item.productId.price !== item.price) {
+              await this.cartItemService.updatePriceItem(item._id.toString(), {
+                price: item.productId.price,
+                total: item.productId.price * item.quantity,
+              });
+
+              const newCart = await this.validate(user._id);
+
+              if (newCart) {
+                newCart.items.length <= 0
+                  ? (newCart.subTotal = 0)
+                  : (newCart.subTotal = newCart.items
+                      .map((item) => item.total)
+                      .reduce((acc, next) => acc + next));
+
+                await newCart.save();
               }
             }
           }),
         );
       }
-      return cart;
+      return this.validate(user._id);
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException();
     }
   }
@@ -171,7 +151,7 @@ export class CartService {
   async addCart(addCartDto: AddCartDto, user: User): Promise<Cart> {
     const { productId, variantId, quantity } = addCartDto;
 
-    const cart = await this.validate(user._id, null);
+    const cart = await this.validate(user._id);
 
     // validate item before add cart
     const product = await this.getProduct(productId);
@@ -218,7 +198,7 @@ export class CartService {
           price: product.price,
         };
         const item = await this.cartItemService.updateItem(
-          cart.items[indexFound]._id,
+          cart.items[indexFound]._id.toString(),
           newItem,
         );
 
@@ -282,12 +262,13 @@ export class CartService {
   async updateCart(
     updateCartDto: UpdateCartDto,
     updateAction: UpdateCartAction,
+    user: User,
   ): Promise<Cart> {
     const { cartId, itemId } = updateCartDto;
 
-    const cart = await this.validate(null, cartId);
+    const cart = await this.validate(cartId);
 
-    if (!cart) {
+    if (!cart || cart.user.toString() !== user._id.toString()) {
       throw new NotFoundException(`This cart id: ${cartId} not exists.`);
     }
 
@@ -339,13 +320,17 @@ export class CartService {
     return cart.save();
   }
 
-  async deleteCartItem(deleteItemDto: DeleteCartItemDto): Promise<Cart> {
+  async deleteCartItem(
+    deleteItemDto: DeleteCartItemDto,
+    user: User,
+  ): Promise<Cart> {
     const { cartId, itemId } = deleteItemDto;
 
     //validate
     await this.cartRepository.findOne({
       _id: cartId,
       items: itemId,
+      user: user._id.toString(),
     });
 
     await this.cartModel.findByIdAndUpdate(cartId, {
@@ -358,11 +343,7 @@ export class CartService {
 
     await this.cartItemService.deleteItem(itemId);
 
-    const newCart = await this.validate(null, cartId);
-
-    if (!newCart) {
-      throw new NotFoundException(`This cart id: ${cartId} not exists.`);
-    }
+    const newCart = await this.validate(cartId);
 
     newCart.items.length === 0
       ? (newCart.subTotal = 0)
@@ -430,5 +411,9 @@ export class CartService {
     cart.subTotal = 0;
 
     return cart.save();
+  }
+
+  async updatePriceCartItem(productId: string, price: number) {
+    return this.cartItemService.updatePrice(productId, price);
   }
 }

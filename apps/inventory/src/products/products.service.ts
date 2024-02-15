@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -6,12 +7,20 @@ import {
 } from '@nestjs/common';
 import { ProductRepository } from './products.repository';
 import { InjectModel } from '@nestjs/mongoose';
-import { OrderItem, Product } from '@app/common';
+import {
+  DataListQuery,
+  DataResponse,
+  Discount,
+  OrderItem,
+  Product,
+} from '@app/common';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { VariantService } from '../variant/variant.service';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { RpcException } from '@nestjs/microservices';
+import { CategoryRepository } from '../category/category.repository';
+import { ProductQuery } from './input/product-query';
 
 @Injectable()
 export class ProductsService {
@@ -19,6 +28,8 @@ export class ProductsService {
     private productRepository: ProductRepository,
     @InjectModel(Product.name) private productModel: Model<Product>,
     private variantService: VariantService,
+    @InjectModel(Discount.name) private discountModel: Model<Discount>,
+    private categoryRepository: CategoryRepository,
   ) {}
 
   async validate(id: string): Promise<Product> {
@@ -48,6 +59,10 @@ export class ProductsService {
           select: 'username avatar',
         },
       },
+      {
+        path: 'discountId',
+        select: 'discount_value valid_until',
+      },
     ]);
     if (!product) {
       throw new NotFoundException(`Product id: ${id} is not exist.`);
@@ -55,24 +70,73 @@ export class ProductsService {
     return product;
   }
 
-  async getProducts(): Promise<Product[]> {
-    return this.productModel.find().populate([
-      {
-        path: 'variants',
-        select: 'size color inventory productId',
-      },
-      {
-        path: 'reviews',
-        select: 'rating comment user productId',
-      },
-      {
-        path: 'reviews',
-        populate: {
-          path: 'user',
-          select: 'username avatar',
+  async getProducts(
+    productQuery: ProductQuery,
+  ): Promise<DataResponse<Product>> {
+    try {
+      const variant_ids: string[] = [];
+      if (productQuery.sizes) {
+        const sizesArray = productQuery.sizes.split(',');
+
+        const variantsArr = await this.variantService.getVariantsByQuery({
+          size: { $in: sizesArray },
+        });
+        variantsArr.forEach((item) => {
+          return variant_ids.push(item._id.toString());
+        });
+      }
+
+      const dataQuery = new DataListQuery(
+        this.productModel.find(
+          productQuery.sizes && { variants: { $in: variant_ids } },
+        ),
+        productQuery,
+      )
+        .filtering()
+        .sorting();
+
+      const total = await dataQuery.query;
+
+      const productsQuery = new DataListQuery(
+        this.productModel.find(
+          productQuery.sizes && { variants: { $in: variant_ids } },
+        ),
+        productQuery,
+      )
+        .filtering()
+        .sorting()
+        .paginate();
+
+      const products = await productsQuery.query.populate([
+        {
+          path: 'variants',
+          select: 'size color inventory productId',
         },
-      },
-    ]);
+        {
+          path: 'reviews',
+          select: 'rating comment user productId',
+        },
+        {
+          path: 'reviews',
+          populate: {
+            path: 'user',
+            select: 'username avatar',
+          },
+        },
+        {
+          path: 'discountId',
+          select: 'discount_value valid_until',
+        },
+      ]);
+
+      return {
+        total: total.length,
+        totalPerPage: products.length,
+        data: products,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
@@ -87,12 +151,25 @@ export class ProductsService {
       variants,
     } = createProductDto;
 
+    // validate category
+    try {
+      await this.categoryRepository.findById(category);
+    } catch (error) {
+      if (error.path === '_id' && error.kind === 'ObjectId') {
+        throw new BadRequestException(
+          '[_id] Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer ',
+        );
+      }
+      throw new InternalServerErrorException(error.message);
+    }
+
     const newProduct = new this.productModel({
       _id: new Types.ObjectId(),
       product_id,
       title: title.toLowerCase(),
       content,
       description,
+      base_price: price,
       price,
       images,
       category,
@@ -117,8 +194,6 @@ export class ProductsService {
       return await newProduct.save();
     } catch (err) {
       if (err && err.code !== 11000) {
-        console.log(err);
-        console.log(err.code);
         throw new InternalServerErrorException();
       }
 
@@ -135,11 +210,47 @@ export class ProductsService {
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const oldProduct = await this.productModel.findById(id);
-
     const { variants, ...updateQuery } = updateProductDto;
 
-    await this.productRepository.findByIdAndUpdate(id, updateQuery);
+    // validate category
+    if (updateQuery.category) {
+      try {
+        await this.categoryRepository.findById(updateQuery.category);
+      } catch (error) {
+        if (error.path === '_id' && error.kind === 'ObjectId') {
+          throw new BadRequestException(
+            '[_id] Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer ',
+          );
+        }
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+
+    const oldProduct = await this.productModel.findById(id);
+
+    // check product is on sale
+    if (updateQuery.price) {
+      if (oldProduct.isDiscount && oldProduct.discountId) {
+        const discount = await this.discountModel.findById(
+          oldProduct.discountId,
+        );
+
+        await this.productRepository.findByIdAndUpdate(id, {
+          ...updateQuery,
+          price:
+            updateQuery.price -
+            updateQuery.price * (discount.discount_value / 100),
+          base_price: updateQuery.price,
+        });
+      } else {
+        await this.productRepository.findByIdAndUpdate(id, {
+          ...updateQuery,
+          base_price: updateQuery.price,
+        });
+      }
+    } else {
+      await this.productRepository.findByIdAndUpdate(id, updateQuery);
+    }
 
     if (variants) {
       // Remove variants in variants schema if it removed in variants field of products schema
@@ -222,5 +333,17 @@ export class ProductsService {
     return this.productModel.findByIdAndUpdate(id, {
       $inc: { sold: resold ? -quantity : quantity },
     });
+  }
+
+  async deleteProduct(id: string) {
+    const product = await this.productRepository.findById(id);
+
+    const variantIds: string[] = [];
+    product.variants.map((variant) => variantIds.push(variant.toString()));
+
+    await this.productRepository.findByIdAndDelete(id);
+    await this.variantService.deleteMany(variantIds);
+
+    return { msg: 'Delete Successfully.' };
   }
 }

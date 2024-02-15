@@ -2,7 +2,12 @@ import { Module } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { ProductRepository } from './products.repository';
-import { AUTH_SERVICE, DatabaseModule } from '@app/common';
+import {
+  AUTH_SERVICE,
+  DatabaseModule,
+  Discount,
+  DiscountSchema,
+} from '@app/common';
 import { Product, ProductSchema } from '@app/common';
 import { Category, CategorySchema } from '@app/common';
 import { CategoryModule } from '../category/category.module';
@@ -19,6 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       { name: Category.name, schema: CategorySchema },
       { name: Variant.name, schema: VariantSchema },
       { name: Review.name, schema: ReviewSchema },
+      { name: Discount.name, schema: DiscountSchema },
     ]),
     CategoryModule,
     VariantModule,
@@ -27,10 +33,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         imports: [ConfigModule],
         name: AUTH_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('AUTH_HOST') /*define in docker-compose */,
-            port: configService.get('AUTH_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'auth',
           },
         }),
         inject: [ConfigService],

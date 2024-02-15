@@ -62,7 +62,7 @@ export class VariantService {
     return this.variantModel.deleteMany({ _id: { $in: ids } });
   }
 
-  async getVariantsByQuery(query: FilterQuery<Variant>): Promise<any> {
+  async getVariantsByQuery(query: FilterQuery<Variant>): Promise<Variant[]> {
     return this.variantRepository.find(query);
   }
 
@@ -95,10 +95,6 @@ export class VariantService {
   }
 
   async inventoryCount(data: { items: OrderItem[]; resold: boolean }) {
-    if (!data.resold) {
-      await this.checkInStock(data.items);
-    }
-
     await Promise.all(
       data.items.map(async (items) => {
         try {
@@ -120,5 +116,9 @@ export class VariantService {
     );
 
     return true;
+  }
+
+  async deleteMany(ids: string[]) {
+    return this.variantRepository.deleteMany(ids);
   }
 }

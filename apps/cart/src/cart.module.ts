@@ -45,10 +45,10 @@ import { CartRepository } from './cart.repository';
       {
         name: AUTH_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('AUTH_HOST') /*define in docker-compose */,
-            port: configService.get('AUTH_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'auth',
           },
         }),
         inject: [ConfigService],
@@ -56,10 +56,10 @@ import { CartRepository } from './cart.repository';
       {
         name: INVENTORY_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('INVENTORY_HOST'),
-            port: configService.get('INVENTORY_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'inventory',
           },
         }),
         inject: [ConfigService],

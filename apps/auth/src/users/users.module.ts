@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { DatabaseModule, MAIL_SERVICE } from '@app/common';
+import { CloudinaryModule, DatabaseModule, MAIL_SERVICE } from '@app/common';
 import { User, UserSchema } from '@app/common';
 import { UserRepository } from './users.repository';
 import { JwtModule } from '@nestjs/jwt';
@@ -17,15 +17,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       {
         name: MAIL_SERVICE,
         useFactory: async (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('MAIL_HOST'),
-            port: configService.get('MAIL_PORT'),
+            urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
+            queue: 'mail',
           },
         }),
         inject: [ConfigService],
       },
     ]),
+    CloudinaryModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, UserRepository],
